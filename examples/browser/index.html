@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sockudo WASM Browser Example</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .header {
+                text-align: center;
+                color: white;
+                margin-bottom: 30px;
+            }
+
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            }
+
+            .header p {
+                font-size: 1.1em;
+                opacity: 0.9;
+            }
+
+            .card {
+                background: white;
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 20px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            }
+
+            .card h2 {
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.5em;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #333;
+            }
+
+            input[type="text"],
+            input[type="password"],
+            select {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid #e0e0e0;
+                border-radius: 6px;
+                font-size: 14px;
+                transition: border-color 0.3s;
+            }
+
+            input[type="text"]:focus,
+            input[type="password"]:focus,
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .button-group {
+                display: flex;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            button {
+                flex: 1;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            button.primary {
+                background: #667eea;
+                color: white;
+            }
+
+            button.primary:hover {
+                background: #5568d3;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            button.secondary {
+                background: #e0e0e0;
+                color: #333;
+            }
+
+            button.secondary:hover {
+                background: #d0d0d0;
+            }
+
+            button.danger {
+                background: #ef4444;
+                color: white;
+            }
+
+            button.danger:hover {
+                background: #dc2626;
+            }
+
+            button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none !important;
+            }
+
+            .status {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px;
+                border-radius: 6px;
+                margin-bottom: 15px;
+            }
+
+            .status.disconnected {
+                background: #fee;
+                color: #c33;
+            }
+
+            .status.connecting {
+                background: #ffe;
+                color: #c93;
+            }
+
+            .status.connected {
+                background: #efe;
+                color: #3c3;
+            }
+
+            .status-dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                animation: pulse 2s infinite;
+            }
+
+            .status.disconnected .status-dot {
+                background: #ef4444;
+            }
+
+            .status.connecting .status-dot {
+                background: #f59e0b;
+            }
+
+            .status.connected .status-dot {
+                background: #10b981;
+            }
+
+            @keyframes pulse {
+                0%,
+                100% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+            }
+
+            .events-log {
+                background: #1e1e1e;
+                color: #d4d4d4;
+                border-radius: 6px;
+                padding: 15px;
+                max-height: 400px;
+                overflow-y: auto;
+                font-family: "Courier New", monospace;
+                font-size: 13px;
+            }
+
+            .event-entry {
+                margin-bottom: 8px;
+                padding: 8px;
+                border-left: 3px solid #667eea;
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .event-time {
+                color: #888;
+                font-size: 11px;
+            }
+
+            .event-type {
+                color: #569cd6;
+                font-weight: 600;
+            }
+
+            .event-channel {
+                color: #4ec9b0;
+            }
+
+            .event-data {
+                color: #ce9178;
+                margin-top: 5px;
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-top: 15px;
+            }
+
+            .stat-box {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 6px;
+                text-align: center;
+            }
+
+            .stat-value {
+                font-size: 2em;
+                font-weight: bold;
+                color: #667eea;
+            }
+
+            .stat-label {
+                color: #666;
+                font-size: 0.9em;
+                margin-top: 5px;
+            }
+
+            .clear-button {
+                padding: 8px 16px;
+                background: #6b7280;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+
+            .clear-button:hover {
+                background: #4b5563;
+            }
+
+            .info-badge {
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+                margin-left: 10px;
+            }
+
+            .channel-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 10px;
+            }
+
+            .channel-tag {
+                background: #f0f0f0;
+                padding: 6px 12px;
+                border-radius: 16px;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .channel-tag button {
+                background: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                font-size: 12px;
+                line-height: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🚀 Sockudo WASM Example</h1>
+                <p>Real-time WebSocket client with xdelta3 compression</p>
+            </div>
+
+            <!-- Connection Configuration -->
+            <div class="card">
+                <h2>⚙️ Connection Settings</h2>
+                <div class="form-group">
+                    <label for="appKey">App Key</label>
+                    <input
+                        type="text"
+                        id="appKey"
+                        placeholder="your-app-key"
+                        value="test-key"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="cluster">Cluster (optional)</label>
+                    <input type="text" id="cluster" placeholder="us2" />
+                </div>
+                <div class="form-group">
+                    <label for="authEndpoint"
+                        >Auth Endpoint (for private channels)</label
+                    >
+                    <input
+                        type="text"
+                        id="authEndpoint"
+                        placeholder="https://your-server.com/pusher/auth"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="enableDelta">
+                        <input type="checkbox" id="enableDelta" checked />
+                        Enable Delta Compression
+                    </label>
+                </div>
+                <div class="button-group">
+                    <button class="primary" id="connectBtn">Connect</button>
+                    <button class="danger" id="disconnectBtn" disabled>
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="card">
+                <div id="statusDisplay" class="status disconnected">
+                    <div class="status-dot"></div>
+                    <strong>Status:</strong>
+                    <span id="statusText">Disconnected</span>
+                    <span
+                        id="socketId"
+                        style="margin-left: auto; font-size: 12px; color: #666"
+                    ></span>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="messagesCount">0</div>
+                        <div class="stat-label">Messages Received</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="channelsCount">0</div>
+                        <div class="stat-label">Active Channels</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="deltaCount">0</div>
+                        <div class="stat-label">Delta Compressions</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Channel Management -->
+            <div class="card">
+                <h2>📡 Channel Management</h2>
+                <div class="form-group">
+                    <label for="channelName">Channel Name</label>
+                    <input
+                        type="text"
+                        id="channelName"
+                        placeholder="my-channel"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="channelType">Channel Type</label>
+                    <select id="channelType">
+                        <option value="public">Public (no auth)</option>
+                        <option value="private">Private (requires auth)</option>
+                        <option value="presence">
+                            Presence (requires auth)
+                        </option>
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button class="primary" id="subscribeBtn" disabled>
+                        Subscribe
+                    </button>
+                    <button class="secondary" id="unsubscribeBtn" disabled>
+                        Unsubscribe
+                    </button>
+                </div>
+                <div class="channel-list" id="channelList"></div>
+            </div>
+
+            <!-- Event Binding -->
+            <div class="card">
+                <h2>🎯 Event Binding</h2>
+                <div class="form-group">
+                    <label for="eventName">Event Name</label>
+                    <input type="text" id="eventName" placeholder="my-event" />
+                </div>
+                <button class="primary" id="bindEventBtn" disabled>
+                    Bind Event
+                </button>
+            </div>
+
+            <!-- Events Log -->
+            <div class="card">
+                <div
+                    style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 15px;
+                    "
+                >
+                    <h2>📋 Events Log</h2>
+                    <button class="clear-button" id="clearLogBtn">
+                        Clear Log
+                    </button>
+                </div>
+                <div class="events-log" id="eventsLog">
+                    <div style="color: #888; text-align: center; padding: 20px">
+                        No events yet. Connect and subscribe to channels to see
+                        events appear here.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="module">
+            // Import the WASM module
+            import init, {
+                SockudoClient,
+                SockudoOptions,
+            } from "../../pkg/sockudo_client.js";
+
+            let client = null;
+            let subscribedChannels = new Map();
+            let messageCount = 0;
+            let deltaCount = 0;
+
+            // Initialize WASM
+            await init();
+            console.log("✅ Sockudo WASM module loaded");
+
+            // DOM elements
+            const connectBtn = document.getElementById("connectBtn");
+            const disconnectBtn = document.getElementById("disconnectBtn");
+            const subscribeBtn = document.getElementById("subscribeBtn");
+            const unsubscribeBtn = document.getElementById("unsubscribeBtn");
+            const bindEventBtn = document.getElementById("bindEventBtn");
+            const clearLogBtn = document.getElementById("clearLogBtn");
+            const statusDisplay = document.getElementById("statusDisplay");
+            const statusText = document.getElementById("statusText");
+            const socketId = document.getElementById("socketId");
+            const eventsLog = document.getElementById("eventsLog");
+            const messagesCount = document.getElementById("messagesCount");
+            const channelsCount = document.getElementById("channelsCount");
+            const deltaCountEl = document.getElementById("deltaCount");
+            const channelList = document.getElementById("channelList");
+
+            // Update status
+            function updateStatus(status, id = "") {
+                statusText.textContent = status;
+                statusDisplay.className = "status " + status.toLowerCase();
+                socketId.textContent = id ? `Socket ID: ${id}` : "";
+            }
+
+            // Log event
+            function logEvent(type, channel, data) {
+                const time = new Date().toLocaleTimeString();
+                const entry = document.createElement("div");
+                entry.className = "event-entry";
+
+                let dataStr = "";
+                if (data) {
+                    try {
+                        dataStr =
+                            typeof data === "string"
+                                ? data
+                                : JSON.stringify(data, null, 2);
+                    } catch (e) {
+                        dataStr = String(data);
+                    }
+                }
+
+                entry.innerHTML = `
+                <div class="event-time">${time}</div>
+                <div><span class="event-type">${type}</span> ${channel ? `on <span class="event-channel">${channel}</span>` : ""}</div>
+                ${dataStr ? `<div class="event-data">${dataStr}</div>` : ""}
+            `;
+
+                if (
+                    eventsLog.children.length === 1 &&
+                    eventsLog.children[0].style.color === "rgb(136, 136, 136)"
+                ) {
+                    eventsLog.innerHTML = "";
+                }
+
+                eventsLog.insertBefore(entry, eventsLog.firstChild);
+
+                if (eventsLog.children.length > 100) {
+                    eventsLog.removeChild(eventsLog.lastChild);
+                }
+
+                messageCount++;
+                messagesCount.textContent = messageCount;
+            }
+
+            // Update channel list
+            function updateChannelList() {
+                channelList.innerHTML = "";
+                channelsCount.textContent = subscribedChannels.size;
+
+                subscribedChannels.forEach((channel, name) => {
+                    const tag = document.createElement("div");
+                    tag.className = "channel-tag";
+                    tag.innerHTML = `
+                    <span>${name}</span>
+                    <button onclick="unsubscribeChannel('${name}')">×</button>
+                `;
+                    channelList.appendChild(tag);
+                });
+            }
+
+            // Make unsubscribeChannel globally accessible
+            window.unsubscribeChannel = function (channelName) {
+                if (subscribedChannels.has(channelName)) {
+                    // Actually unsubscribe from the server
+                    if (client) {
+                        client.unsubscribe(channelName);
+                    }
+                    subscribedChannels.delete(channelName);
+                    updateChannelList();
+                    logEvent("Unsubscribed", channelName);
+                }
+            };
+
+            // Connect
+            connectBtn.addEventListener("click", async () => {
+                const appKey = document.getElementById("appKey").value;
+                const cluster = document.getElementById("cluster").value;
+                const authEndpoint =
+                    document.getElementById("authEndpoint").value;
+                const enableDelta =
+                    document.getElementById("enableDelta").checked;
+
+                if (!appKey) {
+                    alert("Please enter an app key");
+                    return;
+                }
+
+                try {
+                    updateStatus("Connecting");
+                    logEvent("Connecting...", "", `App Key: ${appKey}`);
+
+                    // Create client options
+                    const options = new SockudoOptions(appKey);
+
+                    // Set cluster (use provided or default to 'mt1')
+                    options.cluster = cluster || "mt1";
+                    if (authEndpoint) {
+                        options.auth_endpoint = authEndpoint;
+                    }
+                    options.use_tls = true;
+                    options.enable_delta_compression = enableDelta;
+
+                    // Debug: log what we're setting
+                    console.log("Options configured:", {
+                        cluster: options.cluster,
+                        auth_endpoint: options.auth_endpoint,
+                        use_tls: options.use_tls,
+                        enable_delta_compression:
+                            options.enable_delta_compression,
+                    });
+
+                    client = new SockudoClient(appKey, options);
+
+                    // Bind connection events
+                    client.bind("pusher:connection_established", (data) => {
+                        const id = data.socket_id || "unknown";
+                        updateStatus("Connected", id);
+                        logEvent("Connection Established", "", data);
+
+                        connectBtn.disabled = true;
+                        disconnectBtn.disabled = false;
+                        subscribeBtn.disabled = false;
+                        bindEventBtn.disabled = false;
+                    });
+
+                    client.bind("pusher:error", (data) => {
+                        logEvent("Error", "", data);
+                        console.error("Pusher error:", data);
+                    });
+
+                    // Connect
+                    await client.connect();
+                } catch (error) {
+                    updateStatus("Disconnected");
+                    logEvent("Connection Failed", "", error.message);
+                    console.error("Connection error:", error);
+                    alert("Failed to connect: " + error.message);
+                }
+            });
+
+            // Disconnect
+            disconnectBtn.addEventListener("click", () => {
+                if (client) {
+                    client.disconnect();
+                    client = null;
+                    subscribedChannels.clear();
+                    updateChannelList();
+                    updateStatus("Disconnected");
+                    logEvent("Disconnected");
+
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    subscribeBtn.disabled = true;
+                    unsubscribeBtn.disabled = true;
+                    bindEventBtn.disabled = true;
+                }
+            });
+
+            // Subscribe to channel
+            subscribeBtn.addEventListener("click", async () => {
+                const channelName =
+                    document.getElementById("channelName").value;
+                const channelType =
+                    document.getElementById("channelType").value;
+
+                if (!channelName) {
+                    alert("Please enter a channel name");
+                    return;
+                }
+
+                let fullChannelName = channelName;
+                if (
+                    channelType === "private" &&
+                    !channelName.startsWith("private-")
+                ) {
+                    fullChannelName = "private-" + channelName;
+                } else if (
+                    channelType === "presence" &&
+                    !channelName.startsWith("presence-")
+                ) {
+                    fullChannelName = "presence-" + channelName;
+                }
+
+                try {
+                    logEvent("Subscribing...", fullChannelName);
+
+                    const channel = await client.subscribe(fullChannelName);
+                    subscribedChannels.set(fullChannelName, channel);
+                    updateChannelList();
+
+                    logEvent("Subscribed", fullChannelName);
+                    unsubscribeBtn.disabled = false;
+
+                    // Bind to all events on this channel
+                    channel.bind_all((event, data) => {
+                        logEvent(event, fullChannelName, data);
+
+                        // Check if it's a delta event
+                        if (event.includes("delta")) {
+                            deltaCount++;
+                            deltaCountEl.textContent = deltaCount;
+                        }
+                    });
+                } catch (error) {
+                    logEvent(
+                        "Subscribe Failed",
+                        fullChannelName,
+                        error.message,
+                    );
+                    console.error("Subscribe error:", error);
+                    alert("Failed to subscribe: " + error.message);
+                }
+            });
+
+            // Unsubscribe from channel
+            unsubscribeBtn.addEventListener("click", () => {
+                const channelName =
+                    document.getElementById("channelName").value;
+                window.unsubscribeChannel(channelName);
+            });
+
+            // Bind event
+            bindEventBtn.addEventListener("click", () => {
+                const eventName = document.getElementById("eventName").value;
+
+                if (!eventName) {
+                    alert("Please enter an event name");
+                    return;
+                }
+
+                if (client) {
+                    client.bind(eventName, (data) => {
+                        logEvent(eventName, "Global", data);
+                    });
+                    logEvent("Event Bound", "", eventName);
+                }
+            });
+
+            // Clear log
+            clearLogBtn.addEventListener("click", () => {
+                eventsLog.innerHTML =
+                    '<div style="color: #888; text-align: center; padding: 20px;">Log cleared.</div>';
+                messageCount = 0;
+                messagesCount.textContent = "0";
+            });
+
+            console.log("🎉 Sockudo browser example ready!");
+        </script>
+    </body>
+</html>

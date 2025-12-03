@@ -1,0 +1,7 @@
+[target.wasm32-unknown-unknown]
+# Use wasm-ld for linking, not emcc
+# emcc doesn't support wasm32-unknown-unknown target for linking
+linker = "rust-lld"
+
+[build]
+target-dir = "target"

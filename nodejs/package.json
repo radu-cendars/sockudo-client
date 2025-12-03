@@ -1,0 +1,37 @@
+{
+  "name": "sockudo-client",
+  "version": "0.1.0",
+  "description": "High-performance Pusher-compatible WebSocket client (WebAssembly)",
+  "main": "pkg/sockudo_client.js",
+  "types": "pkg/sockudo_client.d.ts",
+  "scripts": {
+    "build": "cd .. && wasm-pack build --target nodejs --features wasm && cp -r pkg nodejs/",
+    "test": "node example-wasm.js",
+    "test:basic": "node test-basic.js",
+    "test:connection": "node test-real-connection.js",
+    "test:summary": "node test-summary.js"
+  },
+  "keywords": [
+    "pusher",
+    "websocket",
+    "realtime",
+    "wasm",
+    "webassembly",
+    "rust"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/sockudo-client"
+  },
+  "files": [
+    "pkg/*.js",
+    "pkg/*.wasm",
+    "pkg/*.d.ts",
+    "pkg/package.json"
+  ]
+}

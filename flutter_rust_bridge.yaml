@@ -1,0 +1,7 @@
+rust_input: crate::flutter_api
+dart_output: flutter/lib/src/bridge_generated.dart
+rust_root: .
+c_output: flutter/ios/Classes/bridge_generated.h
+default_dart_async: true
+rust_features:
+  - flutter

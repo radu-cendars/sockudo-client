@@ -1,0 +1,56 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Build artifacts - except emcc wrapper
+*.pdb
+!emcc-wrapper.pdb
+emcc-wrapper.exe
+
+# Build artifacts
+pkg/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Flutter
+flutter/.dart_tool/
+flutter/.flutter-plugins
+flutter/.flutter-plugins-dependencies
+flutter/.packages
+flutter/build/
+flutter/pubspec.lock
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# WASM
+*.wasm
+*.wat
+
+# Temporary files
+*.tmp
+*.temp
+NUL
+
+# Editor backups
+*~
+*.bak

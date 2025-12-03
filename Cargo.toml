@@ -1,0 +1,112 @@
+[package]
+name = "sockudo"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A high-performance Pusher-compatible WebSocket client library for Rust with bindings for Kotlin, Swift, JavaScript/Node.js, and Flutter"
+repository = "https://github.com/sockudo/sockudo"
+keywords = ["websocket", "pusher", "realtime", "channels", "pubsub"]
+categories = ["network-programming", "web-programming", "asynchronous"]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false
+
+[lib]
+name = "sockudo_client"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+required-features = ["uniffi-bindgen"]
+
+[features]
+default = ["native"]
+native = ["tokio", "tokio/rt-multi-thread", "tokio/net", "tokio/signal", "tokio-tungstenite", "futures-util", "uniffi", "uniffi/tokio", "reqwest"]
+wasm = ["wasm-bindgen", "wasm-bindgen-futures", "js-sys", "web-sys", "gloo-net", "gloo-timers/futures"]
+uniffi-bindgen = ["uniffi/cli"]
+flutter = ["flutter_rust_bridge", "tokio", "tokio/rt-multi-thread", "tokio/net", "tokio-tungstenite", "futures-util", "reqwest"]
+flutter_rust_bridge = ["dep:flutter_rust_bridge"]
+
+[dependencies]
+# Core async runtime
+futures = "0.3"
+async-trait = "0.1"
+parking_lot = "0.12"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Crypto for encrypted channels
+nacl = { package = "crypto_secretbox", version = "0.1" }
+rand = "0.8"
+base64 = "0.22"
+hmac = "0.12"
+sha2 = "0.10"
+
+# Delta compression
+fossil-delta = "0.2"
+xdelta3 = { git = "https://github.com/radu-cendars/xdelta3-rs" }
+
+# Logging
+log = "0.4"
+tracing = "0.1"
+
+# Utilities
+thiserror = "1.0"
+url = "2.5"
+uuid = { version = "1.6", features = ["v4", "js"] }
+dashmap = "5.5"
+chrono = { version = "0.4", features = ["serde"] }
+
+# UniFFI for Kotlin/Swift bindings
+uniffi = { version = "0.30", optional = true }
+
+# Flutter Rust Bridge (optional)
+flutter_rust_bridge = { version = "=2.11.1", optional = true }
+
+# WASM support (optional)
+wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", optional = true, features = [
+    "WebSocket",
+    "MessageEvent",
+    "CloseEvent",
+    "ErrorEvent",
+    "console",
+    "Window",
+    "Document",
+] }
+gloo-net = { version = "0.5", optional = true }
+gloo-timers = { version = "0.3", optional = true }
+wasm-bindgen-test = "0.3.56"
+
+[build-dependencies]
+uniffi = { version = "0.30", features = ["build"] }
+flutter_rust_bridge_codegen = { version = "2.0", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.5"
+tracing-subscriber = "0.3"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1.35", features = ["sync", "time", "macros", "rt"], default-features = false, optional = true }
+tokio-tungstenite = { version = "0.21", optional = true }
+futures-util = { version = "0.3", optional = true }
+reqwest = { version = "0.11", features = ["json"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "z"
+strip = true
+
+[profile.release-wasm]
+inherits = "release"
+opt-level = "s"
