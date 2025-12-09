@@ -61,11 +61,11 @@ dependencies: [
 ### JavaScript/TypeScript (Browser & Node.js)
 
 ```bash
-npm install sockudo-client
+npm install sockudo
 # or
-yarn add sockudo-client
+yarn add sockudo
 # or
-pnpm add sockudo-client
+pnpm add sockudo
 ```
 
 ### Flutter/Dart
@@ -79,6 +79,159 @@ dependencies:
 ---
 
 ## 🚀 Quick Start
+
+### JavaScript/TypeScript (Browser)
+
+The WASM client provides a full-featured WebSocket implementation for browsers.
+
+```javascript
+import init, { WasmSockudo, WasmOptions } from 'sockudo';
+
+// Initialize WASM module (required before using any WASM functions)
+await init();
+
+// Create options
+const options = new WasmOptions('your-app-key');
+options.cluster = 'mt1';
+options.ws_host = 'localhost';
+options.ws_port = 6001;
+options.use_tls = false;
+options.auth_endpoint = 'https://your-server.com/pusher/auth';
+
+// Enable delta compression (optional)
+options.enableDeltaCompression();
+
+// Create client
+const client = new WasmSockudo('your-app-key', options);
+
+// Set up connection event handlers
+client.bind('pusher:connection_established', (data) => {
+    console.log('Connected! Socket ID:', data.socket_id);
+});
+
+client.bind('state_change', (data) => {
+    console.log('State changed:', data.previous, '->', data.current);
+});
+
+// Connect to server
+await client.connect();
+
+// Subscribe to a channel
+const channel = client.subscribe('my-channel');
+
+// Bind to events on the channel
+channel.bind('my-event', (event) => {
+    console.log('Received event:', event);
+});
+
+// Send client events (requires private/presence channel)
+channel.trigger('client-message', { text: 'Hello!' });
+
+// Disconnect when done
+client.disconnect();
+```
+
+### JavaScript/TypeScript (Node.js)
+
+```javascript
+const { WasmSockudo, WasmOptions } = require('sockudo');
+
+async function main() {
+    // Create options
+    const options = new WasmOptions('your-app-key');
+    options.cluster = 'mt1';
+    options.ws_host = 'localhost';
+    options.ws_port = 6001;
+    options.use_tls = false;
+    
+    // Create and connect client
+    const client = new WasmSockudo('your-app-key', options);
+    
+    client.bind('pusher:connection_established', (data) => {
+        console.log('Connected!');
+    });
+    
+    await client.connect();
+    
+    // Subscribe to channel
+    const channel = client.subscribe('my-channel');
+    channel.bind('my-event', (event) => {
+        console.log('Event received:', event);
+    });
+    
+    // Keep running...
+    await new Promise(resolve => setTimeout(resolve, 60000));
+    
+    client.disconnect();
+}
+
+main().catch(console.error);
+```
+
+### Pusher-Compatible Wrapper
+
+For easier migration from Pusher JS, you can create a compatibility wrapper:
+
+```javascript
+class PusherCompat {
+    constructor(appKey, config) {
+        const options = new WasmOptions(appKey);
+        
+        if (config.cluster) options.cluster = config.cluster;
+        if (config.wsHost) options.ws_host = config.wsHost;
+        if (config.wsPort) options.ws_port = parseInt(config.wsPort);
+        if (config.forceTLS !== undefined) options.use_tls = config.forceTLS;
+        if (config.authEndpoint) options.auth_endpoint = config.authEndpoint;
+        
+        this._client = new WasmSockudo(appKey, options);
+        
+        // Create connection object
+        this.connection = {
+            state: 'initialized',
+            socket_id: null,
+            
+            bind: (event, callback) => {
+                this._client.bind(event, callback);
+            }
+        };
+        
+        // Monitor connection events
+        this._client.bind('pusher:connection_established', (data) => {
+            this.connection.state = 'connected';
+            this.connection.socket_id = data.socket_id || this._client.socket_id;
+        });
+    }
+    
+    async connect() {
+        await this._client.connect();
+    }
+    
+    disconnect() {
+        this._client.disconnect();
+    }
+    
+    subscribe(channelName) {
+        return this._client.subscribe(channelName);
+    }
+    
+    bind(event, callback) {
+        this._client.bind(event, callback);
+    }
+}
+
+// Usage
+const pusher = new PusherCompat('app-key', {
+    cluster: 'mt1',
+    wsHost: 'localhost',
+    wsPort: 6001,
+    forceTLS: false,
+    authEndpoint: 'http://localhost:3000/pusher/auth'
+});
+
+await pusher.connect();
+const channel = pusher.subscribe('my-channel');
+channel.bind('my-event', (data) => console.log(data));
+```
 
 ### Rust
 
@@ -194,69 +347,6 @@ class MyEventCallback: EventCallback {
 }
 ```
 
-### JavaScript/TypeScript (Browser)
-
-```javascript
-import init, { Pusher, SockudoOptions } from 'sockudo-client';
-
-// Initialize WASM module
-await init();
-
-// Configure client
-const options = new SockudoOptions('your-app-key');
-options.cluster = 'mt1';
-options.ws_host = 'localhost';
-options.ws_port = 6001;
-options.use_tls = false;
-options.debug = true;
-
-const pusher = new Pusher('your-app-key', options);
-
-// Connect
-await pusher.connect();
-console.log('Connected! Socket ID:', pusher.socket_id());
-
-// Subscribe to channel
-const channel = pusher.subscribe('my-channel');
-
-// Bind to events
-channel.bind('my-event', (event) => {
-    console.log('Received:', event.data);
-});
-```
-
-### JavaScript/TypeScript (Node.js)
-
-```javascript
-const { Pusher, SockudoOptions } = require('sockudo-client');
-
-async function main() {
-    // Configure client
-    const options = new SockudoOptions('your-app-key');
-    options.cluster = 'mt1';
-    options.ws_host = 'localhost';
-    options.ws_port = 6001;
-    options.use_tls = false;
-    
-    const pusher = new Pusher('your-app-key', options);
-    
-    // Connect
-    await pusher.connect();
-    console.log('Connected! Socket ID:', pusher.socket_id());
-    
-    // Subscribe and bind
-    const channel = pusher.subscribe('my-channel');
-    channel.bind('my-event', (event) => {
-        console.log('Received:', event.data);
-    });
-    
-    // Keep alive
-    await new Promise(resolve => setTimeout(resolve, 3600000));
-}
-
-main().catch(console.error);
-```
-
 ### Flutter/Dart
 
 ```dart
@@ -296,32 +386,128 @@ Future<void> main() async {
 
 ## 📚 Complete Documentation
 
+### WASM Client API
+
+#### Initialization
+
+```javascript
+import init from 'sockudo';
+
+// Must be called before using any WASM functions
+await init();
+```
+
+#### WasmOptions Configuration
+
+```javascript
+const options = new WasmOptions('app-key');
+
+// Connection settings
+options.cluster = 'mt1';              // Cluster name
+options.ws_host = 'localhost';        // WebSocket host
+options.ws_port = 6001;               // WebSocket port
+options.use_tls = false;              // Use TLS/SSL
+
+// Authentication
+options.auth_endpoint = 'https://your-server.com/pusher/auth';
+
+// Delta compression
+options.enableDeltaCompression();     // Enable bandwidth-saving compression
+
+// Reconnection settings
+options.max_reconnection_attempts = 10;    // 0 = unlimited
+options.reconnection_delay_ms = 1000;      // Initial delay
+options.max_reconnection_delay_ms = 30000; // Max delay
+```
+
+#### WasmSockudo Client Methods
+
+```javascript
+const client = new WasmSockudo('app-key', options);
+
+// Connection
+await client.connect();               // Connect to server
+client.disconnect();                  // Disconnect from server
+client.socket_id;                     // Get current socket ID
+
+// Channels
+const channel = client.subscribe('channel-name');
+client.unsubscribe('channel-name');
+const ch = client.channel('channel-name');  // Get existing channel
+
+// Event binding
+client.bind('event-name', (data) => {
+    console.log('Event received:', data);
+});
+
+client.bind_global((eventName, data) => {
+    console.log('Any event:', eventName, data);
+});
+
+client.unbind('event-name');
+client.unbind_all();
+client.unbind_global();
+
+// Send custom events
+client.send_event('pusher:enable_delta_compression', {});
+
+// Delta compression stats
+const stats = client.get_delta_stats();
+client.reset_delta_stats();
+```
+
+#### WasmChannel Methods
+
+```javascript
+const channel = client.subscribe('my-channel');
+
+// Event binding
+channel.bind('event-name', (data) => {
+    console.log('Channel event:', data);
+});
+
+channel.unbind('event-name');
+channel.unbind_all();
+
+// Client events (requires private/presence channel)
+channel.trigger('client-event', { message: 'Hello!' });
+```
+
 ### Channel Types
 
 #### 1. Public Channels
 
 Public channels don't require authentication.
 
-```rust
+```javascript
+// JavaScript
+const channel = client.subscribe('my-channel');
+channel.bind('my-event', (data) => {
+    console.log('Event data:', data);
+});
+
 // Rust
 let channel = client.subscribe("my-channel")?;
-
-// JavaScript
-const channel = pusher.subscribe('my-channel');
-
-// Kotlin
-val channel = client.subscribe("my-channel")
-
-// Swift
-let channel = try client.subscribe(channelName: "my-channel")
-
-// Flutter
-final channel = client.subscribe('my-channel');
+channel.bind("my-event", |event| {
+    println!("Received: {:?}", event.data);
+});
 ```
 
 #### 2. Private Channels
 
 Private channels require server-side authentication.
+
+```javascript
+// JavaScript - Configure auth endpoint
+const options = new WasmOptions('key');
+options.auth_endpoint = 'https://your-server.com/pusher/auth';
+
+const client = new WasmSockudo('key', options);
+const channel = client.subscribe('private-my-channel');
+
+// Trigger client events (private channels only)
+channel.trigger('client-message', { text: 'Hello!' });
+```
 
 ```rust
 // Rust - Configure auth endpoint
@@ -331,27 +517,36 @@ let options = PusherOptions::new("key")
 let client = SockudoClient::new(options.into())?;
 let channel = client.subscribe("private-my-channel")?;
 
-// Trigger client events (private channels only)
+// Trigger client events
 channel.trigger("client-message", serde_json::json!({
     "text": "Hello!"
 }).to_string())?;
 ```
 
-```javascript
-// JavaScript
-const options = new SockudoOptions('key');
-options.auth_endpoint = 'https://your-server.com/pusher/auth';
-
-const pusher = new Pusher('key', options);
-const channel = pusher.subscribe('private-my-channel');
-
-// Trigger client events
-channel.trigger('client-message', { text: 'Hello!' });
-```
-
 #### 3. Presence Channels
 
 Track who's online in real-time.
+
+```javascript
+// JavaScript
+const channel = client.subscribe('presence-chat-room');
+
+// Subscription succeeded - get initial members
+channel.bind('pusher:subscription_succeeded', (data) => {
+    console.log('Members:', data.members);
+    console.log('Count:', data.count);
+});
+
+// Member joined
+channel.bind('pusher:member_added', (data) => {
+    console.log('Member joined:', data.user_id);
+});
+
+// Member left
+channel.bind('pusher:member_removed', (data) => {
+    console.log('Member left:', data.user_id);
+});
+```
 
 ```rust
 // Rust
@@ -378,27 +573,19 @@ channel.bind("pusher:member_removed", |event| {
 });
 ```
 
-```javascript
-// JavaScript
-const channel = pusher.subscribe('presence-chat-room');
-
-channel.bind('pusher:subscription_succeeded', (event) => {
-    console.log('Members:', event.data.members);
-    console.log('Count:', event.data.count);
-});
-
-channel.bind('pusher:member_added', (event) => {
-    console.log('Member joined:', event.data.user_id);
-});
-
-channel.bind('pusher:member_removed', (event) => {
-    console.log('Member left:', event.data.user_id);
-});
-```
-
 #### 4. Private-Encrypted Channels
 
 End-to-end encryption for sensitive data.
+
+```javascript
+// JavaScript
+const channel = client.subscribe('private-encrypted-secrets');
+
+// Messages are automatically decrypted
+channel.bind('secure-message', (data) => {
+    console.log('Decrypted:', data);
+});
+```
 
 ```rust
 // Rust
@@ -412,7 +599,32 @@ channel.bind("secure-message", |event| {
 
 ### Delta Compression
 
-Reduce bandwidth usage by sending only differences between messages.
+Reduce bandwidth usage by up to 70% by sending only differences between messages.
+
+```javascript
+// JavaScript - Enable during client creation
+const options = new WasmOptions('key');
+options.enableDeltaCompression();
+
+const client = new WasmSockudo('key', options);
+await client.connect();
+
+// Or enable after connection
+client.send_event('pusher:enable_delta_compression', {});
+
+// Monitor delta compression
+client.bind('pusher:delta_compression_enabled', (data) => {
+    console.log('Delta compression enabled:', data);
+});
+
+// Check compression stats
+const stats = client.get_delta_stats();
+if (stats) {
+    console.log('Total messages:', stats.total_messages);
+    console.log('Delta messages:', stats.delta_messages);
+    console.log('Bandwidth saved:', stats.bandwidth_saved_percent + '%');
+}
+```
 
 ```rust
 // Rust - Enable delta compression
@@ -430,21 +642,32 @@ if let Some(stats) = client.get_delta_stats() {
 }
 ```
 
-```javascript
-// JavaScript
-const options = new SockudoOptions('key');
-options.enable_delta_compression = true;
-
-const pusher = new Pusher('key', options);
-
-// Get stats
-const stats = pusher.get_delta_stats();
-console.log(`Bandwidth saved: ${stats.bandwidth_saved_percent}%`);
-```
-
 ### Tag Filtering
 
-Filter events server-side to reduce client processing.
+Filter events server-side to reduce client processing and bandwidth.
+
+**Note:** Tag filtering requires server-side support. See [Sockudo Server](https://github.com/sockudo/sockudo) documentation.
+
+```javascript
+// JavaScript - Subscribe with tag filter
+// (Currently requires manual JSON construction)
+const filter = {
+    key: "event_type",
+    cmp: "eq",
+    val: "goal"
+};
+
+// Complex filters
+const complexFilter = {
+    op: "and",
+    nodes: [
+        { key: "event_type", cmp: "eq", val: "shot" },
+        { key: "xG", cmp: "gte", val: "0.8" }
+    ]
+};
+
+// Note: Filter parameter support in subscribe() is planned for future release
+```
 
 ```rust
 // Rust
@@ -465,6 +688,27 @@ let channel = client.subscribe_with_filter("sports-updates", Some(filter))?;
 ```
 
 ### Connection Management
+
+```javascript
+// JavaScript - Connection state events
+client.bind('pusher:connection_established', (data) => {
+    console.log('Connected! Socket ID:', data.socket_id);
+});
+
+client.bind('state_change', (data) => {
+    console.log(`State changed: ${data.previous} -> ${data.current}`);
+});
+
+client.bind('connecting', () => console.log('Connecting...'));
+client.bind('connected', () => console.log('Connected!'));
+client.bind('disconnected', () => console.log('Disconnected'));
+client.bind('unavailable', () => console.log('Connection unavailable'));
+client.bind('failed', () => console.log('Connection failed'));
+client.bind('error', (err) => console.error('Error:', err));
+
+// Manual disconnect
+client.disconnect();
+```
 
 ```rust
 // Rust - Connection state events
@@ -488,24 +732,17 @@ if client.is_connected() {
 client.disconnect().await;
 ```
 
-```javascript
-// JavaScript
-pusher.connection.bind('state_change', (states) => {
-    console.log(`State changed: ${states.previous} -> ${states.current}`);
-});
-
-// Check state
-if (pusher.connection.state === 'connected') {
-    console.log("We're connected!");
-}
-
-// Disconnect
-await pusher.disconnect();
-```
-
 ### Auto-Reconnection
 
 Configure reconnection behavior:
+
+```javascript
+// JavaScript
+const options = new WasmOptions('key');
+options.max_reconnection_attempts = 10;      // 0 = unlimited
+options.reconnection_delay_ms = 1000;        // Initial delay
+options.max_reconnection_delay_ms = 30000;   // Max delay
+```
 
 ```rust
 // Rust
@@ -521,7 +758,7 @@ let options = PusherOptions::new("key")
 
 ### Cross-Platform Signal Handling
 
-Gracefully shutdown on Ctrl+C or termination signals.
+Gracefully shutdown on Ctrl+C or termination signals (Rust only).
 
 ```rust
 // Rust - Simple approach
@@ -612,15 +849,72 @@ cargo run --example presence
 cargo run --example signal_handling
 ```
 
-### JavaScript Examples
+### JavaScript/WASM Examples
 
-See `nodejs/examples/` directory for Node.js examples and `pkg/examples/` for browser examples.
+See `tests/interactive/` directory for comprehensive browser-based examples:
+
+```bash
+cd tests/interactive
+
+# Install dependencies
+npm install  # or bun install
+
+# Build the WASM client
+npm run build
+
+# Start the test server
+npm start
+
+# Open browser to http://localhost:3000
+```
+
+The interactive test suite includes:
+- **Delta Compression Testing**: See bandwidth savings in real-time
+- **Conflation Keys**: Test multiple message streams with compression
+- **Tag Filtering**: Server-side event filtering demonstrations
+- **Presence Channels**: Real-time user tracking
+- **Event Binding**: Global and channel-specific event handling
 
 ### Mobile Examples
 
 - **Android**: See `kotlin/example/` directory
 - **iOS**: See `swift/example/` directory  
 - **Flutter**: See `flutter/example/` directory
+
+---
+
+## 🧪 Testing
+
+### Rust Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test
+cargo test test_xdelta3_decoder
+
+# Run with logging
+RUST_LOG=debug cargo test
+
+# Run examples
+cargo run --example basic
+```
+
+### WASM Integration Tests
+
+```bash
+cd tests/interactive
+
+# Run automated test suite
+npm test
+
+# Or with Bun
+bun test
+
+# Run specific test
+npm test -- --grep "delta compression"
+```
 
 ---
 
@@ -669,25 +963,15 @@ sockudo-client/
 │   └── flutter_api.rs          # Flutter bindings
 ├── Cargo.toml                  # Rust dependencies
 ├── src/sockudo_client.udl      # UniFFI interface
+├── pkg/                        # WASM build output
+│   ├── sockudo_client.js       # JS bindings
+│   ├── sockudo_client.d.ts     # TypeScript definitions
+│   └── sockudo_client_bg.wasm  # WASM binary
+├── tests/interactive/          # Browser test suite
+│   ├── test-all.test.js        # Automated tests
+│   ├── server.js               # Test backend
+│   └── public/                 # Browser dashboard
 └── README.md                   # This file
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-cargo test
-
-# Run specific test
-cargo test test_xdelta3_decoder
-
-# Run with logging
-RUST_LOG=debug cargo test
-
-# Run examples
-cargo run --example basic
 ```
 
 ---
