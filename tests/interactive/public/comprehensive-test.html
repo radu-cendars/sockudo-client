@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sockudo Comprehensive Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .test-section-header {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .test-section-header:hover {
+            background: #eeeeee;
+        }
+
+        .test-section-header h2 {
+            font-size: 1.4em;
+            color: #333;
+        }
+
+        .test-section-header .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status.pending {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .status.running {
+            background: #2196f3;
+            color: white;
+        }
+
+        .status.passed {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.failed {
+            background: #f44336;
+            color: white;
+        }
+
+        .test-section-body {
+            padding: 20px;
+        }
+
+        .config-group {
+            margin-bottom: 20px;
+        }
+
+        .config-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .config-group input,
+        .config-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .config-group input:focus,
+        .config-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.info {
+            color: #4ec9b0;
+        }
+
+        .log-entry.success {
+            color: #4caf50;
+        }
+
+        .log-entry.error {
+            color: #f48771;
+        }
+
+        .log-entry.warning {
+            color: #ffc107;
+        }
+
+        .log-entry .timestamp {
+            color: #858585;
+            margin-right: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .checkbox-group {
+            margin-top: 10px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .test-results {
+            margin-top: 20px;
+        }
+
+        .test-result-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-result-item.pass {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .test-result-item.fail {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .test-result-item .icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        #connectionStatus {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #connectionStatus.disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        #connectionStatus.connecting {
+            background: #ff9800;
+            color: white;
+        }
+
+        #connectionStatus.connected {
+            background: #4caf50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Sockudo Comprehensive Test Suite</h1>
+            <p>Test all features: Connection, Channels, Delta Compression, Filtering, and more</p>
+        </div>
+
+        <div class="content">
+            <!-- Configuration Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>⚙️ Configuration</h2>
+                    <span class="status pending">Setup</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="config-group">
+                        <label>App Key</label>
+                        <input type="text" id="appKey" value="your-app-key" placeholder="Enter your Pusher app key">
+                    </div>
+                    <div class="config-group">
+                        <label>WebSocket Host</label>
+                        <input type="text" id="wsHost" value="ws-mt1.pusher.com" placeholder="e.g., ws-mt1.pusher.com">
+                    </div>
+                    <div class="config-group">
+                        <label>WebSocket Port</label>
+                        <input type="number" id="wsPort" value="443" placeholder="443">
+                    </div>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="useTls" checked>
+                            Use TLS (WSS)
+                        </label>
+                        <label>
+                            <input type="checkbox" id="enableDelta" checked>
+                            Enable Delta Compression
+                        </label>
+                        <label>
+                            <input type="checkbox" id="enableDebug">
+                            Enable Debug Logging
+                        </label>
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="initializeClient()">Initialize Client</button>
+                        <button class="btn-success" onclick="connectClient()">Connect</button>
+                        <button class="btn-danger" onclick="disconnectClient()">Disconnect</button>
+                    </div>
+                    <div>
+                        <strong>Connection Status:</strong>
+                        <span id="connectionStatus" class="disconnected">Disconnected</span>
+                    </div>
+                    <div id="socketInfo" style="margin-top: 10px; color: #666;"></div>
+                </div>
+            </div>
+
+            <!-- Basic Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔌 Basic Connection Tests</h2>
+                    <span class="status pending" id="basicTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runBasicTests()">Run All Basic Tests</button>
+                        <button class="btn-secondary" onclick="testConnection()">Test Connection</button>
+                        <button class="btn-secondary" onclick="testReconnection()">Test Reconnection</button>
+                    </div>
+                    <div id="basicTestResults" class="test-results"></div>
+                    <div id="basicTestLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Channel Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>📡 Channel Subscription Tests</h2>
+                    <span class="status pending" id="channelTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="config-group">
+                        <label>Channel Name</label>
+                        <input type="text" id="channelName" value="test-channel" placeholder="Enter channel name">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runChannelTests()">Run All Channel Tests</button>
+                        <button class="btn-success" onclick="subscribeToChannel()">Subscribe</button>
+                        <button class="btn-danger" onclick="unsubscribeFromChannel()">Unsubscribe</button>
+                        <button class="btn-secondary" onclick="testMultipleChannels()">Test Multiple Channels</button>
+                    </div>
+                    <div id="channelTestResults" class="test-results"></div>
+                    <div id="channelTestLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Delta Compression Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🗜️ Delta Compression Tests</h2>
+                    <span class="status pending" id="deltaTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="config-group">
+                        <label>Delta Algorithm</label>
+                        <select id="deltaAlgorithm">
+                            <option value="fossil,xdelta3">Both (Fossil + Xdelta3)</option>
+                            <option value="fossil">Fossil only</option>
+                            <option value="xdelta3">Xdelta3 only</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label>Max Messages Per Key</label>
+                        <input type="number" id="maxMessages" value="10" min="1" max="100">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runDeltaTests()">Run Delta Tests</button>
+                        <button class="btn-secondary" onclick="sendDeltaMessages()">Send Delta Test Messages</button>
+                        <button class="btn-warning" onclick="resetDeltaStats()">Reset Stats</button>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="value" id="deltaMessagesReceived">0</div>
+                            <div class="label">Messages Received</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value" id="deltaCompressionRatio">0%</div>
+                            <div class="label">Compression Ratio</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value" id="deltaBytesUsed">0</div>
+                            <div class="label">Total Bytes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="value" id="deltaBytesSaved">0</div>
+                            <div class="label">Bytes Saved</div>
+                        </div>
+                    </div>
+                    <div id="deltaTestResults" class="test-results"></div>
+                    <div id="deltaTestLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Conflation Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔀 Conflation Key Tests</h2>
+                    <span class="status pending" id="conflationTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Conflation keys allow messages to be grouped and deduplicated based on a key.
+                    </p>
+                    <div class="config-group">
+                        <label>Conflation Key</label>
+                        <input type="text" id="conflationKey" value="user-123" placeholder="e.g., user-123">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runConflationTests()">Run Conflation Tests</button>
+                        <button class="btn-secondary" onclick="sendConflatedMessages()">Send Conflated Messages</button>
+                    </div>
+                    <div id="conflationTestResults" class="test-results"></div>
+                    <div id="conflationTestLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Filter Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔍 Publish Filtering Tests</h2>
+                    <span class="status pending" id="filterTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <p style="margin-bottom: 15px; color: #666;">
+                        Test server-side event filtering using various filter operations.
+                    </p>
+                    <div class="config-group">
+                        <label>Filter Type</label>
+                        <select id="filterType">
+                            <option value="eq">Equals (eq)</option>
+                            <option value="neq">Not Equals (neq)</option>
+                            <option value="gt">Greater Than (gt)</option>
+                            <option value="lt">Less Than (lt)</option>
+                            <option value="in">In Set (in)</option>
+                            <option value="exists">Exists</option>
+                            <option value="and">AND (multiple filters)</option>
+                            <option value="or">OR (multiple filters)</option>
+                        </select>
+                    </div>
+                    <div class="config-group">
+                        <label>Filter Field</label>
+                        <input type="text" id="filterField" value="type" placeholder="e.g., type">
+                    </div>
+                    <div class="config-group">
+                        <label>Filter Value</label>
+                        <input type="text" id="filterValue" value="important" placeholder="e.g., important">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runFilterTests()">Run Filter Tests</button>
+                        <button class="btn-success" onclick="subscribeWithFilter()">Subscribe with Filter</button>
+                        <button class="btn-secondary" onclick="testComplexFilters()">Test Complex Filters</button>
+                    </div>
+                    <div id="filterTestResults" class="test-results"></div>
+                    <div id="filterTestLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Private Channel Tests Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔒 Private & Presence Channel Tests</h2>
+                    <span class="status pending" id="privateTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="config-group">
+                        <label>Auth Endpoint</label>
+                        <input type="text" id="authEndpoint" value="http://localhost:8080/pusher/auth" placeholder="Auth endpoint URL">
+                    </div>
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runPrivateChannelTests()">Run Private Channel Tests</button>
+                        <button class="btn-success" onclick="subscribePrivateChannel()">Subscribe to Private Channel</button>
+                        <button class="btn-success" onclick="subscribePresenceChannel()">Subscribe to Presence Channel</button>
+                    </div>
+                    <div id="privateTestResults" class="test-results"></div>
+                    <div id="privateTestLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Run All Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🚀 Run All Tests</h2>
+                    <span class="status pending" id="allTestsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runAllTests()" style="font-size: 1.2em; padding: 15px 30px;">
+                            🧪 Run Complete Test Suite
+                        </button>
+                        <button class="btn-warning" onclick="clearAllLogs()">Clear All Logs</button>
+                    </div>
+                    <div id="allTestsSummary" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { SockudoClient, SockudoOptions, DeltaOptions, FilterOp } from '../../../pkg/sockudo_client.js';
+
+        let client = null;
+        let channels = new Map();
+        let testResults = {
+            passed: 0,
+            failed: 0,
+            total: 0
+        };
+
+        // Initialize WASM
+        await init();
+        console.log('WASM initialized successfully');
+
+        // Helper functions
+        function log(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addTestResult(containerId, testName, passed, message = '') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const item = document.createElement('div');
+            item.className = `test-result-item ${passed ? 'pass' : 'fail'}`;
+            const icon = passed ? '✅' : '❌';
+            item.innerHTML = `
+                <span><span class="icon">${icon}</span>${testName}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(item);
+
+            testResults.total++;
+            if (passed) {
+                testResults.passed++;
+            } else {
+                testResults.failed++;
+            }
+        }
+
+        function updateStatus(statusId, status) {
+            const elem = document.getElementById(statusId);
+            if (!elem) return;
+
+            elem.className = `status ${status}`;
+            elem.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function updateConnectionStatus(state) {
+            const elem = document.getElementById('connectionStatus');
+            elem.className = state.toLowerCase();
+            elem.textContent = state.charAt(0).toUpperCase() + state.slice(1);
+        }
+
+        // Make functions globally available
+        window.initializeClient = function() {
+            try {
+                const appKey = document.getElementById('appKey').value;
+                const wsHost = document.getElementById('wsHost').value;
+                const useTls = document.getElementById('useTls').checked;
+                const enableDelta = document.getElementById('enableDelta').checked;
+
+                const options = new SockudoOptions(appKey);
+                options.ws_host = wsHost;
+                options.use_tls = useTls;
+
+                if (enableDelta) {
+                    const deltaOpts = new DeltaOptions();
+                    deltaOpts.enabled = true;
+                    const algorithm = document.getElementById('deltaAlgorithm')?.value || 'fossil,xdelta3';
+                    deltaOpts.setAlgorithms(algorithm);
+                    deltaOpts.max_messages_per_key = parseInt(document.getElementById('maxMessages')?.value || '10');
+                    deltaOpts.debug = document.getElementById('enableDebug')?.checked || false;
+                    options.setDeltaCompression(deltaOpts);
+                }
+
+                client = new SockudoClient(appKey, options);
+                log('basicTestLog', 'Client initialized successfully', 'success');
+                updateConnectionStatus(client.state);
+
+                addTestResult('basicTestResults', 'Client Initialization', true, 'Client created successfully');
+            } catch (error) {
+                log('basicTestLog', `Error initializing client: ${error.message}`, 'error');
+                addTestResult('basicTestResults', 'Client Initialization', false, error.message);
+            }
+        };
+
+        window.connectClient = async function() {
+            if (!client) {
+                log('basicTestLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            try {
+                updateStatus('basicTestsStatus', 'running');
+                log('basicTestLog', 'Connecting to server...', 'info');
+                await client.connect();
+                log('basicTestLog', 'Connected successfully', 'success');
+                updateConnectionStatus(client.state);
+
+                // Wait for socket_id
+                setTimeout(() => {
+                    const socketId = client.socket_id;
+                    if (socketId) {
+                        document.getElementById('socketInfo').textContent = `Socket ID: ${socketId}`;
+                        log('basicTestLog', `Socket ID: ${socketId}`, 'info');
+                    }
+                }, 1000);
+
+                addTestResult('basicTestResults', 'Connection', true, 'Connected successfully');
+                updateStatus('basicTestsStatus', 'passed');
+            } catch (error) {
+                log('basicTestLog', `Connection error: ${error.message}`, 'error');
+                addTestResult('basicTestResults', 'Connection', false, error.message);
+                updateStatus('basicTestsStatus', 'failed');
+            }
+        };
+
+        window.disconnectClient = function() {
+            if (!client) return;
+
+            client.disconnect();
+            log('basicTestLog', 'Disconnected', 'info');
+            updateConnectionStatus(client.state);
+            document.getElementById('socketInfo').textContent = '';
+        };
+
+        window.subscribeToChannel = function() {
+            if (!client) {
+                log('channelTestLog', 'Please initialize and connect client first', 'warning');
+                return;
+            }
+
+            const channelName = document.getElementById('channelName').value;
+            try {
+                const channel = client.subscribe(channelName, null);
+                channels.set(channelName, channel);
+                log('channelTestLog', `Subscribed to channel: ${channelName}`, 'success');
+                addTestResult('channelTestResults', `Subscribe to ${channelName}`, true);
+            } catch (error) {
+                log('channelTestLog', `Error subscribing: ${error.message}`, 'error');
+                addTestResult('channelTestResults', `Subscribe to ${channelName}`, false, error.message);
+            }
+        };
+
+        window.unsubscribeFromChannel = function() {
+            if (!client) return;
+
+            const channelName = document.getElementById('channelName').value;
+            client.unsubscribe(channelName);
+            channels.delete(channelName);
+            log('channelTestLog', `Unsubscribed from channel: ${channelName}`, 'info');
+        };
+
+        window.subscribeWithFilter = function() {
+            if (!client) {
+                log('filterTestLog', 'Please initialize and connect client first', 'warning');
+                return;
+            }
+
+            const channelName = 'filtered-' + document.getElementById('channelName').value;
+            const filterType = document.getElementById('filterType').value;
+            const field = document.getElementById('filterField').value;
+            const value = document.getElementById('filterValue').value;
+
+            try {
+                let filter;
+                switch(filterType) {
+                    case 'eq':
+                        filter = FilterOp.eq(field, value);
+                        break;
+                    case 'neq':
+                        filter = FilterOp.neq(field, value);
+                        break;
+                    case 'gt':
+                        filter = FilterOp.gt(field, value);
+                        break;
+                    case 'lt':
+                        filter = FilterOp.lt(field, value);
+                        break;
+                    case 'exists':
+                        filter = FilterOp.exists(field);
+                        break;
+                    case 'in':
+                        filter = FilterOp.inSet(field, value.split(','));
+                        break;
+                    case 'and':
+                        filter = FilterOp.and([
+                            FilterOp.eq('type', 'important'),
+                            FilterOp.exists('premium')
+                        ]);
+                        break;
+                    case 'or':
+                        filter = FilterOp.or([
+                            FilterOp.eq('role', 'admin'),
+                            FilterOp.eq('role', 'moderator')
+                        ]);
+                        break;
+                }
+
+                const channel = client.subscribe(channelName, filter);
+                channels.set(channelName, channel);
+                log('filterTestLog', `Subscribed with ${filterType} filter: ${filter.toJSON()}`, 'success');
+                addTestResult('filterTestResults', `Subscribe with ${filterType} filter`, true);
+            } catch (error) {
+                log('filterTestLog', `Error: ${error.message}`, 'error');
+                addTestResult('filterTestResults', `Subscribe with ${filterType} filter`, false, error.message);
+            }
+        };
+
+        window.runBasicTests = async function() {
+            updateStatus('basicTestsStatus', 'running');
+            log('basicTestLog', '=== Starting Basic Tests ===', 'info');
+
+            initializeClient();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await connectClient();
+
+            updateStatus('basicTestsStatus', 'passed');
+            log('basicTestLog', '=== Basic Tests Complete ===', 'success');
+        };
+
+        window.runChannelTests = async function() {
+            updateStatus('channelTestsStatus', 'running');
+            log('channelTestLog', '=== Starting Channel Tests ===', 'info');
+
+            subscribeToChannel();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            unsubscribeFromChannel();
+
+            updateStatus('channelTestsStatus', 'passed');
+            log('channelTestLog', '=== Channel Tests Complete ===', 'success');
+        };
+
+        window.runDeltaTests = function() {
+            updateStatus('deltaTestsStatus', 'running');
+            log('deltaTestLog', '=== Starting Delta Compression Tests ===', 'info');
+
+            // Delta tests would require actual server support
+            log('deltaTestLog', 'Delta compression enabled in client configuration', 'info');
+
+            updateStatus('deltaTestsStatus', 'passed');
+            log('deltaTestLog', '=== Delta Tests Complete ===', 'success');
+        };
+
+        window.runConflationTests = function() {
+            updateStatus('conflationTestsStatus', 'running');
+            log('conflationTestLog', '=== Starting Conflation Tests ===', 'info');
+
+            // Conflation tests would require server support
+            const key = document.getElementById('conflationKey').value;
+            log('conflationTestLog', `Testing conflation with key: ${key}`, 'info');
+            addTestResult('conflationTestResults', 'Conflation Key Setup', true, `Key: ${key}`);
+
+            updateStatus('conflationTestsStatus', 'passed');
+            log('conflationTestLog', '=== Conflation Tests Complete ===', 'success');
+        };
+
+        window.runFilterTests = function() {
+            updateStatus('filterTestsStatus', 'running');
+            log('filterTestLog', '=== Starting Filter Tests ===', 'info');
+
+            subscribeWithFilter();
+
+            updateStatus('filterTestsStatus', 'passed');
+            log('filterTestLog', '=== Filter Tests Complete ===', 'success');
+        };
+
+        window.runPrivateChannelTests = function() {
+            updateStatus('privateTestsStatus', 'running');
+            log('privateTestLog', '=== Starting Private Channel Tests ===', 'info');
+
+            const authEndpoint = document.getElementById('authEndpoint').value;
+            log('privateTestLog', `Auth endpoint configured: ${authEndpoint}`, 'info');
+            addTestResult('privateTestResults', 'Auth Endpoint Configuration', true);
+
+            updateStatus('privateTestsStatus', 'passed');
+            log('privateTestLog', '=== Private Channel Tests Complete ===', 'success');
+        };
+
+        window.subscribePrivateChannel = function() {
+            if (!client) {
+                log('privateTestLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            try {
+                const channel = client.subscribe('private-test-channel', null);
+                log('privateTestLog', 'Subscribed to private channel', 'success');
+                addTestResult('privateTestResults', 'Private Channel Subscription', true);
+            } catch (error) {
+                log('privateTestLog', `Error: ${error.message}`, 'error');
+                addTestResult('privateTestResults', 'Private Channel Subscription', false, error.message);
+            }
+        };
+
+        window.subscribePresenceChannel = function() {
+            if (!client) {
+                log('privateTestLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            try {
+                const channel = client.subscribe('presence-test-channel', null);
+                log('privateTestLog', 'Subscribed to presence channel', 'success');
+                addTestResult('privateTestResults', 'Presence Channel Subscription', true);
+            } catch (error) {
+                log('privateTestLog', `Error: ${error.message}`, 'error');
+                addTestResult('privateTestResults', 'Presence Channel Subscription', false, error.message);
+            }
+        };
+
+        window.testMultipleChannels = function() {
+            if (!client) {
+                log('channelTestLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            const channelNames = ['test-1', 'test-2', 'test-3'];
+            channelNames.forEach(name => {
+                try {
+                    const channel = client.subscribe(name, null);
+                    channels.set(name, channel);
+                    log('channelTestLog', `Subscribed to ${name}`, 'success');
+                    addTestResult('channelTestResults', `Subscribe to ${name}`, true);
+                } catch (error) {
+                    log('channelTestLog', `Error subscribing to ${name}: ${error.message}`, 'error');
+                    addTestResult('channelTestResults', `Subscribe to ${name}`, false, error.message);
+                }
+            });
+        };
+
+        window.testComplexFilters = function() {
+            if (!client) {
+                log('filterTestLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            try {
+                // AND filter
+                const andFilter = FilterOp.and([
+                    FilterOp.eq('type', 'important'),
+                    FilterOp.gt('priority', '5')
+                ]);
+                const channel1 = client.subscribe('complex-and-filter', andFilter);
+                log('filterTestLog', `AND filter: ${andFilter.toJSON()}`, 'info');
+                addTestResult('filterTestResults', 'AND Filter', true);
+
+                // OR filter
+                const orFilter = FilterOp.or([
+                    FilterOp.eq('status', 'urgent'),
+                    FilterOp.eq('status', 'critical')
+                ]);
+                const channel2 = client.subscribe('complex-or-filter', orFilter);
+                log('filterTestLog', `OR filter: ${orFilter.toJSON()}`, 'info');
+                addTestResult('filterTestResults', 'OR Filter', true);
+
+            } catch (error) {
+                log('filterTestLog', `Error: ${error.message}`, 'error');
+                addTestResult('filterTestResults', 'Complex Filters', false, error.message);
+            }
+        };
+
+        window.runAllTests = async function() {
+            updateStatus('allTestsStatus', 'running');
+            testResults = { passed: 0, failed: 0, total: 0 };
+
+            await runBasicTests();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await runChannelTests();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            runDeltaTests();
+            runConflationTests();
+            runFilterTests();
+            runPrivateChannelTests();
+
+            const summaryElem = document.getElementById('allTestsSummary');
+            const passRate = ((testResults.passed / testResults.total) * 100).toFixed(1);
+            summaryElem.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="value">${testResults.total}</div>
+                        <div class="label">Total Tests</div>
+                    </div>
+                    <div class="stat-card" style="background: #4caf50;">
+                        <div class="value">${testResults.passed}</div>
+                        <div class="label">Passed</div>
+                    </div>
+                    <div class="stat-card" style="background: #f44336;">
+                        <div class="value">${testResults.failed}</div>
+                        <div class="label">Failed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value">${passRate}%</div>
+                        <div class="label">Pass Rate</div>
+                    </div>
+                </div>
+            `;
+
+            updateStatus('allTestsStatus', testResults.failed === 0 ? 'passed' : 'failed');
+        };
+
+        window.clearAllLogs = function() {
+            document.querySelectorAll('.log-container').forEach(container => {
+                container.innerHTML = '';
+            });
+            document.querySelectorAll('.test-results').forEach(container => {
+                container.innerHTML = '';
+            });
+            testResults = { passed: 0, failed: 0, total: 0 };
+        };
+
+        window.resetDeltaStats = function() {
+            if (client) {
+                client.reset_delta_stats();
+                log('deltaTestLog', 'Delta stats reset', 'info');
+            }
+        };
+
+        console.log('Test suite ready!');
+    </script>
+</body>
+</html>

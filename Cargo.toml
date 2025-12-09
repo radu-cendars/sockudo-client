@@ -13,7 +13,7 @@ wasm-opt = false
 
 [lib]
 name = "sockudo_client"
-crate-type = ["cdylib", "staticlib", "rlib"]
+crate-type = ["cdylib", "rlib"]
 
 [[bin]]
 name = "uniffi-bindgen"
@@ -47,7 +47,7 @@ sha2 = "0.10"
 
 # Delta compression
 fossil-delta = "0.2"
-xdelta3 = { git = "https://github.com/radu-cendars/xdelta3-rs" }
+vcdiff-decoder = { git = "https://github.com/radu-cendars/vcdiff-decoder" }
 
 # Logging
 log = "0.4"
@@ -60,17 +60,17 @@ uuid = { version = "1.6", features = ["v4", "js"] }
 dashmap = "5.5"
 chrono = { version = "0.4", features = ["serde"] }
 
-# UniFFI for Kotlin/Swift bindings
-uniffi = { version = "0.30", optional = true }
+# UniFFI for Kotlin/Swift bindings (not for WASM)
+uniffi = { version = "0.30", optional = true, default-features = false }
 
 # Flutter Rust Bridge (optional)
 flutter_rust_bridge = { version = "=2.11.1", optional = true }
 
 # WASM support (optional)
-wasm-bindgen = { version = "0.2", optional = true }
-wasm-bindgen-futures = { version = "0.4", optional = true }
-js-sys = { version = "0.3", optional = true }
-web-sys = { version = "0.3", optional = true, features = [
+wasm-bindgen = { version = "0.2.106", optional = true }
+wasm-bindgen-futures = { version = "0.4.56", optional = true }
+js-sys = { version = "0.3.83", optional = true }
+web-sys = { version = "0.3.83", optional = true, features = [
     "WebSocket",
     "MessageEvent",
     "CloseEvent",
@@ -79,24 +79,28 @@ web-sys = { version = "0.3", optional = true, features = [
     "Window",
     "Document",
 ] }
-gloo-net = { version = "0.5", optional = true }
+gloo-net = { version = "0.6", optional = true }
 gloo-timers = { version = "0.3", optional = true }
 wasm-bindgen-test = "0.3.56"
+urlencoding = "2.1"
 
 [build-dependencies]
-uniffi = { version = "0.30", features = ["build"] }
 flutter_rust_bridge_codegen = { version = "2.0", optional = true }
 
-[dev-dependencies]
-tokio-test = "0.4"
-wiremock = "0.5"
-tracing-subscriber = "0.3"
+
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1.35", features = ["sync", "time", "macros", "rt"], default-features = false, optional = true }
 tokio-tungstenite = { version = "0.21", optional = true }
 futures-util = { version = "0.3", optional = true }
 reqwest = { version = "0.11", features = ["json"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio-test = "0.4"
+wiremock = "0.5"
+tracing-subscriber = "0.3"
+# xdelta3-rs only for encoding in tests (not for decoding - use vcdiff-decoder instead)
+xdelta3 = { git = "https://github.com/radu-cendars/xdelta3-rs" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }

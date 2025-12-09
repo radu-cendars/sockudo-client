@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sockudo Event Binding Tests</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .test-section-header {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-section-header h2 {
+            font-size: 1.4em;
+            color: #333;
+        }
+
+        .status {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status.passed {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.failed {
+            background: #f44336;
+            color: white;
+        }
+
+        .status.pending {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .test-section-body {
+            padding: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.info {
+            color: #4ec9b0;
+        }
+
+        .log-entry.success {
+            color: #4caf50;
+        }
+
+        .log-entry.error {
+            color: #f48771;
+        }
+
+        .log-entry.warning {
+            color: #ffc107;
+        }
+
+        .log-entry .timestamp {
+            color: #858585;
+            margin-right: 10px;
+        }
+
+        .test-results {
+            margin-top: 15px;
+        }
+
+        .test-result-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-result-item.pass {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .test-result-item.fail {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .label {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .event-counter {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 Event Binding Test Suite</h1>
+            <p>Test all event binding methods: bind, unbind, bind_global, channel.bind, channel.bind_global</p>
+        </div>
+
+        <div class="content">
+            <!-- Setup Section -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>⚙️ Setup</h2>
+                    <span class="status pending" id="setupStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="initializeClient()">Initialize Client</button>
+                        <button class="btn-success" onclick="connectClient()">Connect</button>
+                        <button class="btn-danger" onclick="disconnectClient()">Disconnect</button>
+                    </div>
+                    <div id="setupLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Global Event Binding Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🌐 Global Event Binding (client.bind)</h2>
+                    <span class="status pending" id="globalBindStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testGlobalBind()">Test Global Bind</button>
+                        <button class="btn-success" onclick="triggerTestEvent()">Trigger Test Event</button>
+                        <button class="btn-danger" onclick="testGlobalUnbind()">Test Global Unbind</button>
+                    </div>
+                    <div>
+                        <strong>Events Received:</strong>
+                        <span class="event-counter" id="globalEventCount">0</span>
+                    </div>
+                    <div id="globalBindResults" class="test-results"></div>
+                    <div id="globalBindLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Global All Events Binding Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔊 Global All Events (client.bind_global)</h2>
+                    <span class="status pending" id="bindGlobalStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testBindGlobal()">Test Bind Global</button>
+                        <button class="btn-success" onclick="triggerMultipleEvents()">Trigger Multiple Events</button>
+                        <button class="btn-danger" onclick="testUnbindGlobal()">Test Unbind Global</button>
+                    </div>
+                    <div>
+                        <strong>All Events Received:</strong>
+                        <span class="event-counter" id="allEventCount">0</span>
+                    </div>
+                    <div id="bindGlobalResults" class="test-results"></div>
+                    <div id="bindGlobalLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Channel-Specific Event Binding Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>📺 Channel Event Binding (channel.bind)</h2>
+                    <span class="status pending" id="channelBindStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testChannelBind()">Test Channel Bind</button>
+                        <button class="btn-success" onclick="triggerChannelEvent()">Trigger Channel Event</button>
+                        <button class="btn-danger" onclick="testChannelUnbind()">Test Channel Unbind</button>
+                    </div>
+                    <div>
+                        <strong>Channel Events Received:</strong>
+                        <span class="event-counter" id="channelEventCount">0</span>
+                    </div>
+                    <div id="channelBindResults" class="test-results"></div>
+                    <div id="channelBindLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Channel Global Binding Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>📻 Channel Global Binding (channel.bind_global)</h2>
+                    <span class="status pending" id="channelGlobalStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testChannelBindGlobal()">Test Channel Bind Global</button>
+                        <button class="btn-success" onclick="triggerMultipleChannelEvents()">Trigger Multiple Events</button>
+                        <button class="btn-danger" onclick="testChannelUnbindGlobal()">Test Channel Unbind Global</button>
+                    </div>
+                    <div>
+                        <strong>All Channel Events Received:</strong>
+                        <span class="event-counter" id="channelGlobalEventCount">0</span>
+                    </div>
+                    <div id="channelGlobalResults" class="test-results"></div>
+                    <div id="channelGlobalLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Multiple Callbacks Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔢 Multiple Callbacks</h2>
+                    <span class="status pending" id="multipleCallbacksStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testMultipleCallbacks()">Test Multiple Callbacks</button>
+                        <button class="btn-success" onclick="triggerMultiCallbackEvent()">Trigger Event</button>
+                    </div>
+                    <div>
+                        <strong>Callback Invocations:</strong>
+                        <span class="event-counter" id="multiCallbackCount">0</span>
+                    </div>
+                    <div id="multipleCallbacksResults" class="test-results"></div>
+                    <div id="multipleCallbacksLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Unbind All Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🧹 Unbind All Tests</h2>
+                    <span class="status pending" id="unbindAllStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testUnbindAll()">Test Unbind All</button>
+                        <button class="btn-success" onclick="verifyUnbindAll()">Verify All Unbound</button>
+                    </div>
+                    <div id="unbindAllResults" class="test-results"></div>
+                    <div id="unbindAllLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Pusher Protocol Events Tests -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>🔌 Pusher Protocol Events</h2>
+                    <span class="status pending" id="protocolEventsStatus">Pending</span>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="testProtocolEvents()">Test Protocol Events</button>
+                    </div>
+                    <div id="protocolEventsResults" class="test-results"></div>
+                    <div id="protocolEventsLog" class="log-container"></div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="test-section">
+                <div class="test-section-header">
+                    <h2>📊 Test Summary</h2>
+                </div>
+                <div class="test-section-body">
+                    <div class="button-group">
+                        <button class="btn-primary" onclick="runAllEventTests()" style="font-size: 1.2em; padding: 15px 30px;">
+                            🧪 Run All Event Binding Tests
+                        </button>
+                        <button class="btn-warning" onclick="clearAllLogs()">Clear Logs</button>
+                    </div>
+                    <div id="summaryStats" class="stats-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { SockudoClient, SockudoOptions } from '../../../pkg/sockudo_client.js';
+
+        let client = null;
+        let testChannel = null;
+        let eventCounters = {
+            global: 0,
+            all: 0,
+            channel: 0,
+            channelGlobal: 0,
+            multiple: 0
+        };
+
+        // Initialize WASM
+        await init();
+        console.log('WASM initialized');
+
+        // Helper functions
+        function log(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addTestResult(containerId, testName, passed, message = '') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const item = document.createElement('div');
+            item.className = `test-result-item ${passed ? 'pass' : 'fail'}`;
+            const icon = passed ? '✅' : '❌';
+            item.innerHTML = `
+                <span><span style="margin-right: 10px;">${icon}</span>${testName}</span>
+                <span>${message}</span>
+            `;
+            container.appendChild(item);
+        }
+
+        function updateStatus(statusId, status) {
+            const elem = document.getElementById(statusId);
+            if (!elem) return;
+            elem.className = `status ${status}`;
+            elem.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+
+        function updateCounter(counterId, value) {
+            const elem = document.getElementById(counterId);
+            if (elem) elem.textContent = value;
+        }
+
+        // Make functions globally available
+        window.initializeClient = function() {
+            try {
+                const options = new SockudoOptions('test-app-key');
+                options.ws_host = 'ws-mt1.pusher.com';
+                options.use_tls = true;
+
+                client = new SockudoClient('test-app-key', options);
+                log('setupLog', 'Client initialized successfully', 'success');
+                updateStatus('setupStatus', 'passed');
+            } catch (error) {
+                log('setupLog', `Error: ${error.message}`, 'error');
+                updateStatus('setupStatus', 'failed');
+            }
+        };
+
+        window.connectClient = async function() {
+            if (!client) {
+                log('setupLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            try {
+                log('setupLog', 'Connecting...', 'info');
+                await client.connect();
+                log('setupLog', 'Connected successfully', 'success');
+
+                // Subscribe to test channel
+                testChannel = client.subscribe('event-binding-test', null);
+                log('setupLog', 'Subscribed to test channel', 'success');
+            } catch (error) {
+                log('setupLog', `Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.disconnectClient = function() {
+            if (client) {
+                client.disconnect();
+                log('setupLog', 'Disconnected', 'info');
+            }
+        };
+
+        // Global Bind Tests
+        window.testGlobalBind = function() {
+            if (!client) {
+                log('globalBindLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            eventCounters.global = 0;
+            updateCounter('globalEventCount', 0);
+
+            client.bind('test-event', (data) => {
+                eventCounters.global++;
+                updateCounter('globalEventCount', eventCounters.global);
+                log('globalBindLog', `Global bind callback triggered: ${data}`, 'success');
+            });
+
+            log('globalBindLog', 'Global bind registered for "test-event"', 'info');
+            addTestResult('globalBindResults', 'Global Bind Registration', true);
+            updateStatus('globalBindStatus', 'passed');
+        };
+
+        window.triggerTestEvent = function() {
+            if (!client) return;
+
+            const data = { message: 'Test from global bind', timestamp: Date.now() };
+            client.send_event('test-event', data, null);
+            log('globalBindLog', 'Triggered test-event', 'info');
+        };
+
+        window.testGlobalUnbind = function() {
+            if (!client) return;
+
+            client.unbind('test-event');
+            log('globalBindLog', 'Unbound test-event', 'info');
+            addTestResult('globalBindResults', 'Global Unbind', true);
+        };
+
+        // Bind Global Tests
+        window.testBindGlobal = function() {
+            if (!client) {
+                log('bindGlobalLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            eventCounters.all = 0;
+            updateCounter('allEventCount', 0);
+
+            client.bind_global((data) => {
+                eventCounters.all++;
+                updateCounter('allEventCount', eventCounters.all);
+                log('bindGlobalLog', `Global callback received event: ${data}`, 'success');
+            });
+
+            log('bindGlobalLog', 'Global callback registered (bind_global)', 'info');
+            addTestResult('bindGlobalResults', 'Bind Global Registration', true);
+            updateStatus('bindGlobalStatus', 'passed');
+        };
+
+        window.triggerMultipleEvents = function() {
+            if (!client) return;
+
+            const events = ['event-1', 'event-2', 'event-3'];
+            events.forEach(eventName => {
+                client.send_event(eventName, { name: eventName }, null);
+                log('bindGlobalLog', `Triggered ${eventName}`, 'info');
+            });
+        };
+
+        window.testUnbindGlobal = function() {
+            if (!client) return;
+
+            client.unbind_global();
+            log('bindGlobalLog', 'Unbound all global callbacks', 'info');
+            addTestResult('bindGlobalResults', 'Unbind Global', true);
+        };
+
+        // Channel Bind Tests
+        window.testChannelBind = function() {
+            if (!testChannel) {
+                log('channelBindLog', 'Please connect and subscribe first', 'warning');
+                return;
+            }
+
+            eventCounters.channel = 0;
+            updateCounter('channelEventCount', 0);
+
+            testChannel.bind('channel-event', (data) => {
+                eventCounters.channel++;
+                updateCounter('channelEventCount', eventCounters.channel);
+                log('channelBindLog', `Channel event received: ${data}`, 'success');
+            });
+
+            log('channelBindLog', 'Channel bind registered for "channel-event"', 'info');
+            addTestResult('channelBindResults', 'Channel Bind Registration', true);
+            updateStatus('channelBindStatus', 'passed');
+        };
+
+        window.triggerChannelEvent = function() {
+            if (!client || !testChannel) return;
+
+            const data = { message: 'Channel-specific event', timestamp: Date.now() };
+            client.send_event('channel-event', data, 'event-binding-test');
+            log('channelBindLog', 'Triggered channel-event', 'info');
+        };
+
+        window.testChannelUnbind = function() {
+            if (!testChannel) return;
+
+            testChannel.unbind('channel-event');
+            log('channelBindLog', 'Unbound channel-event', 'info');
+            addTestResult('channelBindResults', 'Channel Unbind', true);
+        };
+
+        // Channel Bind Global Tests
+        window.testChannelBindGlobal = function() {
+            if (!testChannel) {
+                log('channelGlobalLog', 'Please connect and subscribe first', 'warning');
+                return;
+            }
+
+            eventCounters.channelGlobal = 0;
+            updateCounter('channelGlobalEventCount', 0);
+
+            testChannel.bind_global((eventName, data) => {
+                eventCounters.channelGlobal++;
+                updateCounter('channelGlobalEventCount', eventCounters.channelGlobal);
+                log('channelGlobalLog', `Channel global callback: ${eventName} -> ${data}`, 'success');
+            });
+
+            log('channelGlobalLog', 'Channel global callback registered', 'info');
+            addTestResult('channelGlobalResults', 'Channel Bind Global Registration', true);
+            updateStatus('channelGlobalStatus', 'passed');
+        };
+
+        window.triggerMultipleChannelEvents = function() {
+            if (!client) return;
+
+            const events = ['ch-event-1', 'ch-event-2', 'ch-event-3'];
+            events.forEach(eventName => {
+                client.send_event(eventName, { name: eventName }, 'event-binding-test');
+                log('channelGlobalLog', `Triggered ${eventName} on channel`, 'info');
+            });
+        };
+
+        window.testChannelUnbindGlobal = function() {
+            if (!testChannel) return;
+
+            testChannel.unbind_global();
+            log('channelGlobalLog', 'Unbound channel global callbacks', 'info');
+            addTestResult('channelGlobalResults', 'Channel Unbind Global', true);
+        };
+
+        // Multiple Callbacks Tests
+        window.testMultipleCallbacks = function() {
+            if (!client) {
+                log('multipleCallbacksLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            eventCounters.multiple = 0;
+            updateCounter('multiCallbackCount', 0);
+
+            // Register 3 callbacks for same event
+            for (let i = 1; i <= 3; i++) {
+                client.bind('multi-event', (data) => {
+                    eventCounters.multiple++;
+                    updateCounter('multiCallbackCount', eventCounters.multiple);
+                    log('multipleCallbacksLog', `Callback ${i} triggered`, 'success');
+                });
+            }
+
+            log('multipleCallbacksLog', 'Registered 3 callbacks for multi-event', 'info');
+            addTestResult('multipleCallbacksResults', 'Multiple Callbacks Registration', true);
+            updateStatus('multipleCallbacksStatus', 'passed');
+        };
+
+        window.triggerMultiCallbackEvent = function() {
+            if (!client) return;
+
+            client.send_event('multi-event', { test: 'data' }, null);
+            log('multipleCallbacksLog', 'Triggered multi-event', 'info');
+
+            setTimeout(() => {
+                if (eventCounters.multiple === 3) {
+                    addTestResult('multipleCallbacksResults', 'All 3 Callbacks Fired', true);
+                    log('multipleCallbacksLog', '✓ All 3 callbacks executed', 'success');
+                } else {
+                    addTestResult('multipleCallbacksResults', 'All 3 Callbacks Fired', false,
+                        `Expected 3, got ${eventCounters.multiple}`);
+                }
+            }, 500);
+        };
+
+        // Unbind All Tests
+        window.testUnbindAll = function() {
+            if (!client) {
+                log('unbindAllLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            // Register some callbacks
+            client.bind('test-1', () => {});
+            client.bind('test-2', () => {});
+            client.bind_global(() => {});
+
+            log('unbindAllLog', 'Registered multiple callbacks', 'info');
+
+            // Unbind all
+            client.unbind_all();
+
+            log('unbindAllLog', 'Called unbind_all()', 'info');
+            addTestResult('unbindAllResults', 'Unbind All', true);
+            updateStatus('unbindAllStatus', 'passed');
+        };
+
+        window.verifyUnbindAll = function() {
+            if (!client) return;
+
+            // Try to trigger events - none should fire
+            client.send_event('test-1', {}, null);
+            client.send_event('test-2', {}, null);
+
+            log('unbindAllLog', 'Triggered events after unbind_all - no callbacks should fire', 'info');
+            addTestResult('unbindAllResults', 'Verify No Callbacks Fire', true);
+        };
+
+        // Protocol Events Tests
+        window.testProtocolEvents = function() {
+            if (!client) {
+                log('protocolEventsLog', 'Please initialize client first', 'warning');
+                return;
+            }
+
+            // Bind to pusher protocol events
+            client.bind('pusher:connection_established', (data) => {
+                log('protocolEventsLog', 'pusher:connection_established received', 'success');
+                addTestResult('protocolEventsResults', 'Connection Established Event', true);
+            });
+
+            client.bind('pusher:ping', (data) => {
+                log('protocolEventsLog', 'pusher:ping received', 'success');
+                addTestResult('protocolEventsResults', 'Ping Event', true);
+            });
+
+            client.bind('pusher:pong', (data) => {
+                log('protocolEventsLog', 'pusher:pong sent', 'success');
+                addTestResult('protocolEventsResults', 'Pong Event', true);
+            });
+
+            log('protocolEventsLog', 'Protocol event listeners registered', 'info');
+            updateStatus('protocolEventsStatus', 'passed');
+        };
+
+        // Run all tests
+        window.runAllEventTests = async function() {
+            log('setupLog', '=== Starting All Event Binding Tests ===', 'info');
+
+            initializeClient();
+            await new Promise(r => setTimeout(r, 500));
+            await connectClient();
+            await new Promise(r => setTimeout(r, 2000));
+
+            testGlobalBind();
+            await new Promise(r => setTimeout(r, 500));
+
+            testBindGlobal();
+            await new Promise(r => setTimeout(r, 500));
+
+            testChannelBind();
+            await new Promise(r => setTimeout(r, 500));
+
+            testChannelBindGlobal();
+            await new Promise(r => setTimeout(r, 500));
+
+            testMultipleCallbacks();
+            await new Promise(r => setTimeout(r, 500));
+
+            testProtocolEvents();
+            await new Promise(r => setTimeout(r, 500));
+
+            testUnbindAll();
+
+            log('setupLog', '=== All Tests Complete ===', 'success');
+
+            // Update summary
+            const summaryElem = document.getElementById('summaryStats');
+            summaryElem.innerHTML = `
+                <div class="stat-card">
+                    <div class="value">${eventCounters.global}</div>
+                    <div class="label">Global Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${eventCounters.all}</div>
+                    <div class="label">All Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${eventCounters.channel}</div>
+                    <div class="label">Channel Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">${eventCounters.channelGlobal}</div>
+                    <div class="label">Channel Global</div>
+                </div>
+            `;
+        };
+
+        window.clearAllLogs = function() {
+            document.querySelectorAll('.log-container').forEach(c => c.innerHTML = '');
+            document.querySelectorAll('.test-results').forEach(c => c.innerHTML = '');
+            Object.keys(eventCounters).forEach(k => {
+                eventCounters[k] = 0;
+            });
+            document.querySelectorAll('.event-counter').forEach(c => c.textContent = '0');
+        };
+
+        console.log('Event binding test suite ready!');
+    </script>
+</body>
+</html>

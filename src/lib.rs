@@ -56,7 +56,9 @@ pub mod transports;
 pub mod utils;
 
 mod error;
+#[cfg(not(target_arch = "wasm32"))]
 mod ffi_callbacks;
+#[cfg(not(target_arch = "wasm32"))]
 mod ffi_types;
 mod options;
 mod pusher;
@@ -75,6 +77,7 @@ pub use ffi_types::SockudoOptions as UniffiSockudoOptions;
 pub use ffi_types::{UniffiDeltaStats, UniffiMemberInfo, UniffiPusherEvent};
 pub use options::{PusherOptions, SockudoOptions};
 pub use protocol::{FilterOp, Protocol};
+#[cfg(not(target_arch = "wasm32"))]
 pub use pusher::{Pusher, SockudoClient};
 
 // UniFFI setup for Kotlin/Swift bindings

@@ -24,6 +24,7 @@ enum ConnectionCommand {
     Disconnect,
     Send(String),
     Ping,
+    SendPong,
     Shutdown,
 }
 
@@ -135,6 +136,9 @@ impl ConnectionManager {
         let reconnect_attempts = self.reconnect_attempts.clone();
         let using_tls = self.using_tls.clone();
 
+        // Clone cmd_tx for the connection task
+        let cmd_tx_for_task = cmd_tx.clone();
+
         // Spawn the connection task
         tokio::spawn(async move {
             connection_task(
@@ -145,6 +149,7 @@ impl ConnectionManager {
                 reconnect_attempts,
                 using_tls,
                 cmd_rx,
+                cmd_tx_for_task,
                 msg_tx,
             )
             .await
@@ -329,6 +334,7 @@ async fn connection_task(
     reconnect_attempts: Arc<RwLock<u32>>,
     using_tls: Arc<RwLock<bool>>,
     mut cmd_rx: mpsc::Receiver<ConnectionCommand>,
+    cmd_tx: mpsc::Sender<ConnectionCommand>,
     msg_tx: mpsc::Sender<PusherEvent>,
 ) {
     use tokio::time::interval;
@@ -348,9 +354,17 @@ async fn connection_task(
                         let msg_tx_clone = msg_tx.clone();
                         let state_clone = state.clone();
                         let socket_id_clone = socket_id.clone();
+                        let cmd_tx_clone = cmd_tx.clone();
 
                         transport.on_message(Box::new(move |message| {
                             if let Ok(event) = Protocol::decode_message(message) {
+                                // Handle pusher:ping - respond with pusher:pong immediately
+                                if event.event == "pusher:ping" {
+                                    debug!("Received pusher:ping, sending pusher:pong");
+                                    // Send command to send pong
+                                    let _ = cmd_tx_clone.try_send(ConnectionCommand::SendPong);
+                                }
+
                                 // Handle connection:established event
                                 if event.event == "pusher:connection_established" {
                                     if let Some(ref data) = event.data {
@@ -408,6 +422,15 @@ async fn connection_task(
                     ConnectionCommand::Ping => {
                         if let Err(e) = transport.ping().await {
                             error!("Failed to send ping: {:?}", e);
+                        }
+                    }
+                    ConnectionCommand::SendPong => {
+                        let pong_event = Protocol::create_pong_event();
+                        if let Ok(pong_msg) = Protocol::encode_message(&pong_event) {
+                            debug!("Sending pusher:pong");
+                            if let Err(e) = transport.send(&pong_msg).await {
+                                error!("Failed to send pong: {:?}", e);
+                            }
                         }
                     }
                     ConnectionCommand::Shutdown => {

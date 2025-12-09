@@ -56,11 +56,9 @@ impl Xdelta3Decoder {
 
 impl DeltaDecoder for Xdelta3Decoder {
     fn decode(&self, base: &[u8], delta: &[u8]) -> Result<Vec<u8>> {
-        // xdelta3::decode(input, src) where input=delta, src=base
-        match xdelta3::decode(delta, base) {
-            Some(result) => Ok(result),
-            None => Err(SockudoError::delta("Xdelta3 decode failed")),
-        }
+        // Use vcdiff-decoder for VCDIFF/xdelta3 decoding (works with WASM)
+        vcdiff_decoder::decode(delta, base)
+            .map_err(|e| SockudoError::delta(format!("VCDIFF decode failed: {}", e)))
     }
 
     fn algorithm(&self) -> &'static str {
@@ -129,6 +127,8 @@ mod tests {
         assert_eq!(decoded, original);
     }
 
+    // xdelta3 encoder is only available for non-wasm targets (dev-dependency)
+    #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn test_xdelta3_decoder() {
         let base = b"Hello, World!";

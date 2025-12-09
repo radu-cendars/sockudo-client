@@ -44,6 +44,7 @@ use crate::PusherEvent;
 ///     Ok(())
 /// }
 /// ```
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg_attr(feature = "uniffi", derive(uniffi::Object))]
 pub struct SockudoClient {
     /// Application key
@@ -62,6 +63,7 @@ pub struct SockudoClient {
     delta_manager: Option<Arc<RwLock<DeltaManager>>>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "uniffi")]
 #[uniffi::export]
 impl SockudoClient {
@@ -83,7 +85,8 @@ impl SockudoClient {
         // Create delta manager if enabled
         let delta_manager = if let Some(delta_opts) = config.delta_compression.clone() {
             if delta_opts.enabled {
-                Some(Arc::new(RwLock::new(DeltaManager::new(delta_opts))))
+                let dm = DeltaManager::new(delta_opts);
+                Some(Arc::new(RwLock::new(dm)))
             } else {
                 None
             }
@@ -123,6 +126,28 @@ impl SockudoClient {
                 Err(_) => false,
             }
         }));
+
+        // Set up send callback for delta manager
+        if let Some(ref dm) = delta_manager {
+            let connection_for_delta = connection.clone();
+            dm.write()
+                .set_send_callback(Arc::new(move |event_name, data| {
+                    let mut event = PusherEvent::new(event_name);
+                    #[cfg(feature = "wasm")]
+                    {
+                        event.data = Some(data.clone());
+                    }
+                    #[cfg(not(feature = "wasm"))]
+                    {
+                        event.data = Some(data.to_string());
+                    }
+
+                    match Protocol::encode_message(&event) {
+                        Ok(msg) => connection_for_delta.send(&msg),
+                        Err(_) => false,
+                    }
+                }));
+        }
 
         // Set up authorization callback for private/presence channels
         // Note: uniffi doesn't support async callbacks easily, so we use blocking
@@ -233,6 +258,72 @@ impl SockudoClient {
                 "Received event: '{}' on channel {:?}",
                 event.event, event.channel
             );
+
+            // Handle delta compression protocol events first
+            if let Some(ref dm) = delta_manager_for_events {
+                match event.event.as_str() {
+                    "pusher:delta_compression_enabled" => {
+                        if let Some(ref data) = event.data {
+                            #[cfg(feature = "wasm")]
+                            {
+                                dm.write().handle_enabled(data);
+                            }
+                            #[cfg(not(feature = "wasm"))]
+                            {
+                                if let Ok(value) = serde_json::from_str::<serde_json::Value>(data) {
+                                    dm.write().handle_enabled(&value);
+                                    debug!("Delta compression enabled by server");
+                                }
+                            }
+                        }
+                        return;
+                    }
+                    "pusher:delta_cache_sync" => {
+                        if let (Some(ref channel), Some(ref data)) = (&event.channel, &event.data) {
+                            #[cfg(feature = "wasm")]
+                            let sync_result: std::result::Result<crate::delta::CacheSyncData, _> = serde_json::from_value(data.clone());
+                            #[cfg(not(feature = "wasm"))]
+                            let sync_result: std::result::Result<crate::delta::CacheSyncData, _> = serde_json::from_str(data);
+
+                            if let Ok(sync_data) = sync_result {
+                                dm.write().handle_cache_sync(channel, sync_data);
+                                debug!("Delta cache sync for channel: {}", channel);
+                            }
+                        }
+                        return;
+                    }
+                    "pusher:delta" => {
+                        if let Some(ref channel) = event.channel {
+                            if let Some(ref data) = event.data {
+                                #[cfg(feature = "wasm")]
+                                let delta_result: std::result::Result<crate::delta::DeltaMessage, _> = serde_json::from_value(data.clone());
+                                #[cfg(not(feature = "wasm"))]
+                                let delta_result: std::result::Result<crate::delta::DeltaMessage, _> = serde_json::from_str(data);
+
+                                if let Ok(delta_msg) = delta_result {
+                                    match dm.read().handle_delta(channel, delta_msg) {
+                                        Ok(decoded_event) => {
+                                            // Route the decoded event to the channel
+                                            if let Some(ch) = channels_for_events.find(channel) {
+                                                ch.handle_event(&decoded_event);
+                                            }
+                                            // Also emit globally
+                                            global_emitter_for_events.emit(&decoded_event);
+                                            debug!("Delta decoded and routed for channel: {}", channel);
+                                        }
+                                        Err(e) => {
+                                            warn!("Failed to handle delta: {}", e);
+                                            dm.read().request_resync(channel);
+                                        }
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
 
             // Check if this is an internal event (like pusher-js does)
             let is_internal = event.event.starts_with("pusher_internal:");
@@ -581,6 +672,7 @@ impl SockudoClient {
 }
 
 // Rust-native methods that accept closures (always available)
+#[cfg(not(target_arch = "wasm32"))]
 impl SockudoClient {
     /// Bind a callback to all events globally.
     ///
@@ -609,6 +701,7 @@ impl SockudoClient {
 }
 
 // Private methods (not exported via uniffi)
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg(feature = "uniffi")]
 impl SockudoClient {
     /// Handle an incoming message from the connection.
@@ -714,6 +807,7 @@ impl SockudoClient {
 }
 
 // WASM-specific methods (outside uniffi export)
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg(all(feature = "wasm", not(feature = "uniffi")))]
 impl SockudoClient {
     /// Send an event to the server (WASM version).
@@ -730,6 +824,7 @@ impl SockudoClient {
 }
 
 // Non-uniffi methods (for WASM and other non-FFI builds)
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg(not(feature = "uniffi"))]
 impl SockudoClient {
     /// Create a new Sockudo client (Pusher-JS compatible API).
@@ -832,6 +927,28 @@ impl SockudoClient {
             }
         }));
 
+        // Set up send callback for delta manager
+        if let Some(ref dm) = delta_manager {
+            let connection_for_delta = connection.clone();
+            dm.write()
+                .set_send_callback(Arc::new(move |event_name, data| {
+                    let mut event = PusherEvent::new(event_name);
+                    #[cfg(feature = "wasm")]
+                    {
+                        event.data = Some(data.clone());
+                    }
+                    #[cfg(not(feature = "wasm"))]
+                    {
+                        event.data = Some(data.to_string());
+                    }
+
+                    match Protocol::encode_message(&event) {
+                        Ok(msg) => connection_for_delta.send(&msg),
+                        Err(_) => false,
+                    }
+                }));
+        }
+
         // Set up authorization callback for private/presence channels
         // Authorization callback is only needed for native builds
         // WASM uses async authorization directly in subscribe_async
@@ -875,6 +992,7 @@ impl SockudoClient {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl std::fmt::Debug for SockudoClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SockudoClient")
@@ -888,10 +1006,12 @@ impl std::fmt::Debug for SockudoClient {
 }
 
 // Make SockudoClient Send + Sync for use across threads
+#[cfg(not(target_arch = "wasm32"))]
 unsafe impl Send for SockudoClient {}
+#[cfg(not(target_arch = "wasm32"))]
 unsafe impl Sync for SockudoClient {}
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use crate::ChannelType;
 
@@ -946,4 +1066,5 @@ mod tests {
 }
 
 /// Pusher-compatible alias for SockudoClient (for backward compatibility)
+#[cfg(not(target_arch = "wasm32"))]
 pub type Pusher = SockudoClient;

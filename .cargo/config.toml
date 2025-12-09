@@ -1,6 +1,5 @@
 [target.wasm32-unknown-unknown]
-# Use wasm-ld for linking, not emcc
-# emcc doesn't support wasm32-unknown-unknown target for linking
+# Use rust-lld for linking WASM modules
 linker = "rust-lld"
 
 [build]

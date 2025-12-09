@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Delta Compression Test</title>
+        <style>
+            body {
+                font-family: monospace;
+                padding: 20px;
+                background: #1e293b;
+                color: #e2e8f0;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            h1 {
+                color: #60a5fa;
+            }
+            .controls {
+                background: #334155;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            button {
+                background: #3b82f6;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                margin: 5px;
+            }
+            button:hover {
+                background: #2563eb;
+            }
+            button:disabled {
+                background: #64748b;
+                cursor: not-allowed;
+            }
+            .stats {
+                background: #334155;
+                padding: 20px;
+                border-radius: 8px;
+                margin: 20px 0;
+            }
+            .stat-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid #475569;
+            }
+            .stat-label {
+                color: #94a3b8;
+            }
+            .stat-value {
+                color: #60a5fa;
+                font-weight: bold;
+            }
+            .log {
+                background: #0f172a;
+                padding: 15px;
+                border-radius: 8px;
+                max-height: 400px;
+                overflow-y: auto;
+                font-size: 12px;
+            }
+            .log-entry {
+                padding: 4px 0;
+            }
+            .log-entry.delta {
+                color: #10b981;
+            }
+            .log-entry.full {
+                color: #f59e0b;
+            }
+            .log-entry.error {
+                color: #ef4444;
+            }
+            input {
+                width: 100%;
+                padding: 8px;
+                background: #475569;
+                border: 1px solid #64748b;
+                border-radius: 4px;
+                color: white;
+                margin: 5px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔬 Delta Compression Test</h1>
+
+            <div class="controls">
+                <h3>Connection</h3>
+                <input
+                    type="text"
+                    id="appKey"
+                    value="your-app-key"
+                    placeholder="App Key"
+                />
+                <input
+                    type="text"
+                    id="host"
+                    value="localhost"
+                    placeholder="Host"
+                />
+                <input
+                    type="number"
+                    id="port"
+                    value="6001"
+                    placeholder="Port"
+                />
+                <button id="connectBtn">Connect</button>
+                <button id="disconnectBtn" disabled>Disconnect</button>
+            </div>
+
+            <div class="controls">
+                <h3>Test Scenario</h3>
+                <button id="test1Btn" disabled>
+                    Test 1: Similar Messages (Should compress)
+                </button>
+                <button id="test2Btn" disabled>
+                    Test 2: Different Messages (Won't compress)
+                </button>
+                <button id="test3Btn" disabled>
+                    Test 3: Incremental Updates (High compression)
+                </button>
+                <button id="clearStatsBtn" disabled>Clear Stats</button>
+            </div>
+
+            <div class="stats">
+                <h3>Statistics</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Total Messages:</span>
+                    <span class="stat-value" id="totalMessages">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Delta Messages:</span>
+                    <span class="stat-value" id="deltaMessages">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Full Messages:</span>
+                    <span class="stat-value" id="fullMessages">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Compression Ratio:</span>
+                    <span class="stat-value" id="compressionRatio">0%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Bandwidth Saved:</span>
+                    <span class="stat-value" id="bandwidthSaved">0%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Bytes Received:</span>
+                    <span class="stat-value" id="bytesReceived">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Bytes Original:</span>
+                    <span class="stat-value" id="bytesOriginal">0</span>
+                </div>
+            </div>
+
+            <div class="log" id="log">
+                <div class="log-entry">Ready to test delta compression...</div>
+            </div>
+        </div>
+
+        <script type="module">
+            import init, {
+                SockudoClient,
+                SockudoOptions,
+            } from "../../pkg/sockudo_client.js";
+
+            let client = null;
+            let channel = null;
+            let messageCount = 0;
+            let bytesReceived = 0;
+            let bytesOriginal = 0;
+
+            const elements = {
+                appKey: document.getElementById("appKey"),
+                host: document.getElementById("host"),
+                port: document.getElementById("port"),
+                connectBtn: document.getElementById("connectBtn"),
+                disconnectBtn: document.getElementById("disconnectBtn"),
+                test1Btn: document.getElementById("test1Btn"),
+                test2Btn: document.getElementById("test2Btn"),
+                test3Btn: document.getElementById("test3Btn"),
+                clearStatsBtn: document.getElementById("clearStatsBtn"),
+                log: document.getElementById("log"),
+                totalMessages: document.getElementById("totalMessages"),
+                deltaMessages: document.getElementById("deltaMessages"),
+                fullMessages: document.getElementById("fullMessages"),
+                compressionRatio: document.getElementById("compressionRatio"),
+                bandwidthSaved: document.getElementById("bandwidthSaved"),
+                bytesReceived: document.getElementById("bytesReceived"),
+                bytesOriginal: document.getElementById("bytesOriginal"),
+            };
+
+            function log(message, type = "normal") {
+                const entry = document.createElement("div");
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                elements.log.appendChild(entry);
+                elements.log.scrollTop = elements.log.scrollHeight;
+            }
+
+            function updateStats() {
+                if (!client) return;
+
+                try {
+                    const stats = client.get_delta_stats();
+                    if (stats) {
+                        elements.totalMessages.textContent =
+                            stats.total_messages || 0;
+                        elements.deltaMessages.textContent =
+                            stats.delta_messages || 0;
+                        elements.fullMessages.textContent =
+                            stats.total_messages - stats.delta_messages || 0;
+                        elements.compressionRatio.textContent =
+                            (stats.average_compression_ratio || 0).toFixed(1) +
+                            "%";
+                        elements.bandwidthSaved.textContent =
+                            (stats.bandwidth_saved_percent || 0).toFixed(1) +
+                            "%";
+                        elements.bytesReceived.textContent = (
+                            stats.compressed_bytes || 0
+                        ).toLocaleString();
+                        elements.bytesOriginal.textContent = (
+                            stats.original_bytes || 0
+                        ).toLocaleString();
+                    }
+                } catch (e) {
+                    console.error("Failed to get stats:", e);
+                }
+            }
+
+            async function connect() {
+                try {
+                    log("Initializing WASM...");
+                    await init();
+
+                    log("Creating Sockudo client...");
+                    const options = new SockudoOptions(elements.appKey.value);
+                    options.ws_host = elements.host.value;
+                    options.ws_port = parseInt(elements.port.value);
+                    options.use_tls = false;
+                    options.enableDeltaCompression();
+
+                    client = new SockudoClient(elements.appKey.value, options);
+
+                    log("Connecting...");
+                    await client.connect();
+
+                    log("✅ Connected!", "full");
+
+                    // Subscribe to test channel
+                    log("Subscribing to test-delta channel...");
+                    channel = client.subscribe("test-delta");
+
+                    // Bind to test events
+                    channel.bind("test-event", (event) => {
+                        messageCount++;
+                        const data = JSON.parse(event.data || "{}");
+
+                        // Check if this was a delta
+                        const isDelta = event.data && event.data.length < 100; // Rough heuristic
+                        log(
+                            `Message #${messageCount}: ${JSON.stringify(data).substring(0, 50)}...`,
+                            isDelta ? "delta" : "full",
+                        );
+
+                        updateStats();
+                    });
+
+                    log("✅ Subscribed to test-delta", "full");
+
+                    elements.connectBtn.disabled = true;
+                    elements.disconnectBtn.disabled = false;
+                    elements.test1Btn.disabled = false;
+                    elements.test2Btn.disabled = false;
+                    elements.test3Btn.disabled = false;
+                    elements.clearStatsBtn.disabled = false;
+                } catch (e) {
+                    log(`❌ Error: ${e.message}`, "error");
+                }
+            }
+
+            async function disconnect() {
+                if (client) {
+                    await client.disconnect();
+                    client = null;
+                    channel = null;
+                    log("Disconnected", "error");
+                }
+
+                elements.connectBtn.disabled = false;
+                elements.disconnectBtn.disabled = true;
+                elements.test1Btn.disabled = true;
+                elements.test2Btn.disabled = true;
+                elements.test3Btn.disabled = true;
+                elements.clearStatsBtn.disabled = true;
+            }
+
+            function simulateMessage(data) {
+                // Simulate receiving a message by manually triggering
+                // In real scenario, this would come from the server
+                log(
+                    "📤 Simulating message (send this from another client)",
+                    "normal",
+                );
+                log("   Channel: test-delta", "normal");
+                log(`   Event: test-event`, "normal");
+                log(
+                    `   Data: ${JSON.stringify(data).substring(0, 100)}...`,
+                    "normal",
+                );
+            }
+
+            // Test 1: Similar messages (should compress well)
+            async function test1() {
+                log("\n🧪 Test 1: Similar Messages", "full");
+                log("Sending messages with small changes...", "normal");
+
+                const baseData = {
+                    userId: 123,
+                    userName: "John Doe",
+                    status: "online",
+                    timestamp: Date.now(),
+                    metrics: {
+                        cpu: 45.2,
+                        memory: 1024,
+                        network: 100,
+                    },
+                };
+
+                // Send similar messages with small changes
+                for (let i = 0; i < 10; i++) {
+                    const data = {
+                        ...baseData,
+                        timestamp: Date.now(),
+                        metrics: {
+                            ...baseData.metrics,
+                            cpu: 45.2 + i * 0.5,
+                        },
+                    };
+                    simulateMessage(data);
+                    await new Promise((r) => setTimeout(r, 500));
+                }
+
+                log(
+                    "✅ Test 1 complete. Check if delta compression was used!",
+                    "full",
+                );
+            }
+
+            // Test 2: Different messages (won't compress)
+            async function test2() {
+                log("\n🧪 Test 2: Different Messages", "full");
+                log("Sending completely different messages...", "normal");
+
+                const messages = [
+                    { type: "user-login", user: "alice", action: "login" },
+                    {
+                        type: "notification",
+                        message: "New message",
+                        from: "bob",
+                    },
+                    { type: "system", status: "maintenance", duration: 300 },
+                    { type: "event", name: "page-view", url: "/home" },
+                    { type: "analytics", event: "click", element: "button" },
+                ];
+
+                for (const msg of messages) {
+                    simulateMessage(msg);
+                    await new Promise((r) => setTimeout(r, 500));
+                }
+
+                log(
+                    "✅ Test 2 complete. These should NOT compress well.",
+                    "full",
+                );
+            }
+
+            // Test 3: Incremental updates (best compression)
+            async function test3() {
+                log("\n🧪 Test 3: Incremental Updates", "full");
+                log(
+                    "Sending messages with tiny incremental changes...",
+                    "normal",
+                );
+
+                let counter = 0;
+
+                for (let i = 0; i < 15; i++) {
+                    const data = {
+                        type: "counter-update",
+                        userId: 123,
+                        userName: "John Doe",
+                        email: "john@example.com",
+                        profile: {
+                            bio: "Software engineer",
+                            location: "San Francisco",
+                            website: "https://example.com",
+                        },
+                        counter: counter++,
+                        timestamp: Date.now(),
+                    };
+                    simulateMessage(data);
+                    await new Promise((r) => setTimeout(r, 300));
+                }
+
+                log(
+                    "✅ Test 3 complete. These should have BEST compression!",
+                    "full",
+                );
+            }
+
+            function clearStats() {
+                if (client) {
+                    client.reset_delta_stats();
+                    messageCount = 0;
+                    bytesReceived = 0;
+                    bytesOriginal = 0;
+                    updateStats();
+                    log("📊 Stats cleared", "normal");
+                }
+            }
+
+            // Event listeners
+            elements.connectBtn.addEventListener("click", connect);
+            elements.disconnectBtn.addEventListener("click", disconnect);
+            elements.test1Btn.addEventListener("click", test1);
+            elements.test2Btn.addEventListener("click", test2);
+            elements.test3Btn.addEventListener("click", test3);
+            elements.clearStatsBtn.addEventListener("click", clearStats);
+
+            // Auto-update stats every 2 seconds
+            setInterval(updateStats, 2000);
+
+            log(
+                "Page loaded. Configure connection and click Connect to start.",
+            );
+        </script>
+    </body>
+</html>

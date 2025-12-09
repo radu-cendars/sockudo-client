@@ -1,0 +1,1461 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Sockudo Client - Comprehensive Test Page</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+            }
+
+            .header p {
+                opacity: 0.9;
+                font-size: 1.1em;
+            }
+
+            .main-content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .panel {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 20px;
+                border: 2px solid #e9ecef;
+            }
+
+            .panel.full-width {
+                grid-column: 1 / -1;
+            }
+
+            .panel h2 {
+                color: #667eea;
+                margin-bottom: 15px;
+                font-size: 1.5em;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .panel h3 {
+                color: #764ba2;
+                margin: 15px 0 10px 0;
+                font-size: 1.2em;
+            }
+
+            .status-badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.7em;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+
+            .status-badge.connected {
+                background: #10b981;
+                color: white;
+            }
+
+            .status-badge.disconnected {
+                background: #ef4444;
+                color: white;
+            }
+
+            .status-badge.connecting {
+                background: #f59e0b;
+                color: white;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #495057;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                width: 100%;
+                padding: 10px;
+                border: 2px solid #e9ecef;
+                border-radius: 6px;
+                font-size: 14px;
+                transition: border-color 0.2s;
+            }
+
+            .form-group input:focus,
+            .form-group select:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+            .form-group textarea {
+                min-height: 80px;
+                font-family: monospace;
+                resize: vertical;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .checkbox-group {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin: 10px 0;
+            }
+
+            .checkbox-group input[type="checkbox"] {
+                width: auto;
+                cursor: pointer;
+            }
+
+            .btn {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .btn-primary {
+                background: #667eea;
+                color: white;
+            }
+
+            .btn-primary:hover:not(:disabled) {
+                background: #5568d3;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-danger {
+                background: #ef4444;
+                color: white;
+            }
+
+            .btn-danger:hover:not(:disabled) {
+                background: #dc2626;
+            }
+
+            .btn-success {
+                background: #10b981;
+                color: white;
+            }
+
+            .btn-success:hover:not(:disabled) {
+                background: #059669;
+            }
+
+            .btn-warning {
+                background: #f59e0b;
+                color: white;
+            }
+
+            .btn-warning:hover:not(:disabled) {
+                background: #d97706;
+            }
+
+            .btn-group {
+                display: flex;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            .info-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin: 15px 0;
+            }
+
+            .info-card {
+                background: white;
+                padding: 15px;
+                border-radius: 6px;
+                border-left: 4px solid #667eea;
+            }
+
+            .info-card .label {
+                font-size: 0.85em;
+                color: #6c757d;
+                margin-bottom: 5px;
+                text-transform: uppercase;
+                font-weight: 600;
+            }
+
+            .info-card .value {
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #667eea;
+            }
+
+            .event-log {
+                background: #1e293b;
+                color: #e2e8f0;
+                border-radius: 6px;
+                padding: 15px;
+                max-height: 400px;
+                overflow-y: auto;
+                font-family: "Consolas", "Monaco", monospace;
+                font-size: 13px;
+            }
+
+            .event-log-entry {
+                padding: 8px;
+                margin-bottom: 8px;
+                border-radius: 4px;
+                border-left: 3px solid;
+                animation: slideIn 0.3s ease-out;
+            }
+
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+
+            .event-log-entry.info {
+                background: rgba(59, 130, 246, 0.1);
+                border-color: #3b82f6;
+            }
+
+            .event-log-entry.success {
+                background: rgba(16, 185, 129, 0.1);
+                border-color: #10b981;
+            }
+
+            .event-log-entry.error {
+                background: rgba(239, 68, 68, 0.1);
+                border-color: #ef4444;
+            }
+
+            .event-log-entry.warning {
+                background: rgba(245, 158, 11, 0.1);
+                border-color: #f59e0b;
+            }
+
+            .event-log-entry .timestamp {
+                color: #94a3b8;
+                font-size: 0.9em;
+            }
+
+            .event-log-entry .event-type {
+                color: #60a5fa;
+                font-weight: bold;
+            }
+
+            .channel-list {
+                background: white;
+                border-radius: 6px;
+                padding: 10px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .channel-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px;
+                margin-bottom: 8px;
+                background: #f8f9fa;
+                border-radius: 4px;
+                border-left: 3px solid #667eea;
+            }
+
+            .channel-item .channel-name {
+                font-weight: 600;
+                color: #495057;
+            }
+
+            .channel-item .channel-type {
+                font-size: 0.8em;
+                color: #6c757d;
+                background: #e9ecef;
+                padding: 2px 8px;
+                border-radius: 12px;
+            }
+
+            .member-list {
+                background: white;
+                border-radius: 6px;
+                padding: 10px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .member-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px;
+                margin-bottom: 6px;
+                background: #f8f9fa;
+                border-radius: 4px;
+            }
+
+            .member-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 0.9em;
+            }
+
+            .member-info {
+                flex: 1;
+            }
+
+            .member-name {
+                font-weight: 600;
+                color: #495057;
+            }
+
+            .member-id {
+                font-size: 0.85em;
+                color: #6c757d;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .stat-card {
+                background: white;
+                padding: 15px;
+                border-radius: 6px;
+                text-align: center;
+            }
+
+            .stat-value {
+                font-size: 2em;
+                font-weight: bold;
+                color: #667eea;
+            }
+
+            .stat-label {
+                font-size: 0.85em;
+                color: #6c757d;
+                margin-top: 5px;
+            }
+
+            .log-controls {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+            }
+
+            .alert {
+                padding: 12px;
+                border-radius: 6px;
+                margin-bottom: 15px;
+                display: none;
+            }
+
+            .alert.show {
+                display: block;
+            }
+
+            .alert.error {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fca5a5;
+            }
+
+            .alert.success {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #6ee7b7;
+            }
+
+            .alert.info {
+                background: #dbeafe;
+                color: #1e40af;
+                border: 1px solid #93c5fd;
+            }
+
+            .loading {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                border: 2px solid #f3f3f3;
+                border-top: 2px solid #667eea;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 40px;
+                color: #6c757d;
+            }
+
+            .empty-state-icon {
+                font-size: 3em;
+                margin-bottom: 10px;
+                opacity: 0.3;
+            }
+
+            @media (max-width: 1024px) {
+                .main-content {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🚀 Sockudo Client Test Page</h1>
+                <p>Comprehensive WebSocket Testing Interface</p>
+            </div>
+
+            <div class="main-content">
+                <!-- Connection Panel -->
+                <div class="panel">
+                    <h2>
+                        🔌 Connection
+                        <span
+                            id="connectionStatus"
+                            class="status-badge disconnected"
+                            >Disconnected</span
+                        >
+                    </h2>
+
+                    <div id="connectionAlert" class="alert"></div>
+
+                    <div class="form-group">
+                        <label>App Key</label>
+                        <input
+                            type="text"
+                            id="appKey"
+                            value="your-app-key"
+                            placeholder="Enter app key"
+                        />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Host</label>
+                            <input
+                                type="text"
+                                id="wsHost"
+                                value="localhost"
+                                placeholder="localhost"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label>Port</label>
+                            <input
+                                type="number"
+                                id="wsPort"
+                                value="6001"
+                                placeholder="6001"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cluster</label>
+                            <input
+                                type="text"
+                                id="cluster"
+                                value="mt1"
+                                placeholder="mt1"
+                            />
+                        </div>
+                        <div class="form-group">
+                            <label>Auth Endpoint</label>
+                            <input
+                                type="text"
+                                id="authEndpoint"
+                                placeholder="https://your-server.com/auth"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="useTls" />
+                        <label for="useTls">Use TLS/WSS</label>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enableDebug" checked />
+                        <label for="enableDebug">Enable Debug Mode</label>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enableDelta" checked />
+                        <label for="enableDelta"
+                            >Enable Delta Compression</label
+                        >
+                    </div>
+
+                    <div class="btn-group">
+                        <button id="connectBtn" class="btn btn-primary">
+                            Connect
+                        </button>
+                        <button
+                            id="disconnectBtn"
+                            class="btn btn-danger"
+                            disabled
+                        >
+                            Disconnect
+                        </button>
+                    </div>
+
+                    <h3>Connection Info</h3>
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <div class="label">Socket ID</div>
+                            <div class="value" id="socketId">-</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="label">State</div>
+                            <div class="value" id="connectionState">
+                                disconnected
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Channel Management -->
+                <div class="panel">
+                    <h2>📡 Channels</h2>
+
+                    <div class="form-group">
+                        <label>Channel Name</label>
+                        <input
+                            type="text"
+                            id="channelName"
+                            placeholder="my-channel"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Channel Type</label>
+                        <select id="channelType">
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                            <option value="presence">Presence</option>
+                            <option value="encrypted">Private-Encrypted</option>
+                        </select>
+                    </div>
+
+                    <div class="btn-group">
+                        <button
+                            id="subscribeBtn"
+                            class="btn btn-success"
+                            disabled
+                        >
+                            Subscribe
+                        </button>
+                        <button
+                            id="unsubscribeBtn"
+                            class="btn btn-warning"
+                            disabled
+                        >
+                            Unsubscribe
+                        </button>
+                    </div>
+
+                    <h3>Active Channels</h3>
+                    <div id="channelList" class="channel-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>No active channels</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Management -->
+                <div class="panel">
+                    <h2>⚡ Events</h2>
+
+                    <div class="form-group">
+                        <label>Target Channel</label>
+                        <select id="targetChannel">
+                            <option value="">Select a channel</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Event Name</label>
+                        <input
+                            type="text"
+                            id="eventName"
+                            placeholder="my-event"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Event Data (JSON)</label>
+                        <textarea
+                            id="eventData"
+                            placeholder='{"message": "Hello World!"}'
+                        ></textarea>
+                    </div>
+
+                    <div class="btn-group">
+                        <button
+                            id="triggerEventBtn"
+                            class="btn btn-primary"
+                            disabled
+                        >
+                            Trigger Event
+                        </button>
+                        <button
+                            id="bindEventBtn"
+                            class="btn btn-success"
+                            disabled
+                        >
+                            Bind to Event
+                        </button>
+                    </div>
+
+                    <h3>Bound Events</h3>
+                    <div id="boundEventsList" class="channel-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🎯</div>
+                            <p>No bound events</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="panel">
+                    <h2>📊 Statistics</h2>
+
+                    <h3>Delta Compression</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalMessages">0</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="deltaMessages">0</div>
+                            <div class="stat-label">Delta Messages</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="bandwidthSaved">0%</div>
+                            <div class="stat-label">Bandwidth Saved</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="compressionRatio">
+                                0%
+                            </div>
+                            <div class="stat-label">Compression</div>
+                        </div>
+                    </div>
+
+                    <button
+                        id="refreshStatsBtn"
+                        class="btn btn-primary"
+                        style="margin-top: 15px"
+                    >
+                        Refresh Stats
+                    </button>
+                </div>
+
+                <!-- Presence Panel -->
+                <div class="panel">
+                    <h2>👥 Presence Channel Members</h2>
+
+                    <div class="form-group">
+                        <label>Select Presence Channel</label>
+                        <select id="presenceChannelSelect">
+                            <option value="">No presence channels</option>
+                        </select>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <div class="label">Total Members</div>
+                            <div class="value" id="memberCount">0</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="label">My User ID</div>
+                            <div class="value" id="myUserId">-</div>
+                        </div>
+                    </div>
+
+                    <h3>Member List</h3>
+                    <div id="memberList" class="member-list">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👤</div>
+                            <p>No members</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Log -->
+                <div class="panel full-width">
+                    <h2>📝 Event Log</h2>
+
+                    <div class="log-controls">
+                        <button id="clearLogBtn" class="btn btn-warning">
+                            Clear Log
+                        </button>
+                        <button id="exportLogBtn" class="btn btn-primary">
+                            Export Log
+                        </button>
+                        <label
+                            style="
+                                margin-left: auto;
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                            "
+                        >
+                            <input type="checkbox" id="autoScroll" checked />
+                            Auto-scroll
+                        </label>
+                    </div>
+
+                    <div id="eventLog" class="event-log">
+                        <div class="event-log-entry info">
+                            <span class="timestamp">[00:00:00]</span>
+                            <span class="event-type">SYSTEM</span>
+                            : Ready to connect. Configure your settings and
+                            click Connect.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script type="module">
+            import init, {
+                SockudoClient,
+                SockudoOptions,
+            } from "../../pkg/sockudo_client.js";
+
+            // Global state
+            let pusher = null;
+            let subscribedChannels = new Map();
+            let boundEvents = new Map();
+            let presenceMembers = new Map();
+
+            // DOM elements
+            const elements = {
+                // Connection
+                appKey: document.getElementById("appKey"),
+                wsHost: document.getElementById("wsHost"),
+                wsPort: document.getElementById("wsPort"),
+                cluster: document.getElementById("cluster"),
+                authEndpoint: document.getElementById("authEndpoint"),
+                useTls: document.getElementById("useTls"),
+                enableDebug: document.getElementById("enableDebug"),
+                enableDelta: document.getElementById("enableDelta"),
+                connectBtn: document.getElementById("connectBtn"),
+                disconnectBtn: document.getElementById("disconnectBtn"),
+                connectionStatus: document.getElementById("connectionStatus"),
+                connectionState: document.getElementById("connectionState"),
+                socketId: document.getElementById("socketId"),
+                connectionAlert: document.getElementById("connectionAlert"),
+
+                // Channels
+                channelName: document.getElementById("channelName"),
+                channelType: document.getElementById("channelType"),
+                subscribeBtn: document.getElementById("subscribeBtn"),
+                unsubscribeBtn: document.getElementById("unsubscribeBtn"),
+                channelList: document.getElementById("channelList"),
+
+                // Events
+                targetChannel: document.getElementById("targetChannel"),
+                eventName: document.getElementById("eventName"),
+                eventData: document.getElementById("eventData"),
+                triggerEventBtn: document.getElementById("triggerEventBtn"),
+                bindEventBtn: document.getElementById("bindEventBtn"),
+                boundEventsList: document.getElementById("boundEventsList"),
+
+                // Stats
+                totalMessages: document.getElementById("totalMessages"),
+                deltaMessages: document.getElementById("deltaMessages"),
+                bandwidthSaved: document.getElementById("bandwidthSaved"),
+                compressionRatio: document.getElementById("compressionRatio"),
+                refreshStatsBtn: document.getElementById("refreshStatsBtn"),
+
+                // Presence
+                presenceChannelSelect: document.getElementById(
+                    "presenceChannelSelect",
+                ),
+                memberCount: document.getElementById("memberCount"),
+                myUserId: document.getElementById("myUserId"),
+                memberList: document.getElementById("memberList"),
+
+                // Log
+                eventLog: document.getElementById("eventLog"),
+                clearLogBtn: document.getElementById("clearLogBtn"),
+                exportLogBtn: document.getElementById("exportLogBtn"),
+                autoScroll: document.getElementById("autoScroll"),
+            };
+
+            // Logging functions
+            function log(message, type = "info") {
+                const timestamp = new Date().toLocaleTimeString();
+                const entry = document.createElement("div");
+                entry.className = `event-log-entry ${type}`;
+                entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+                elements.eventLog.appendChild(entry);
+
+                if (elements.autoScroll.checked) {
+                    elements.eventLog.scrollTop =
+                        elements.eventLog.scrollHeight;
+                }
+            }
+
+            function logEvent(eventName, data) {
+                log(
+                    `<span class="event-type">${eventName}</span>: ${JSON.stringify(data)}`,
+                    "info",
+                );
+            }
+
+            function logSuccess(message) {
+                log(
+                    `<span class="event-type">SUCCESS</span>: ${message}`,
+                    "success",
+                );
+            }
+
+            function logError(message) {
+                log(
+                    `<span class="event-type">ERROR</span>: ${message}`,
+                    "error",
+                );
+            }
+
+            function logWarning(message) {
+                log(
+                    `<span class="event-type">WARNING</span>: ${message}`,
+                    "warning",
+                );
+            }
+
+            function showAlert(message, type) {
+                elements.connectionAlert.textContent = message;
+                elements.connectionAlert.className = `alert ${type} show`;
+                setTimeout(() => {
+                    elements.connectionAlert.classList.remove("show");
+                }, 5000);
+            }
+
+            // Update connection status
+            function updateConnectionStatus(state) {
+                elements.connectionState.textContent = state;
+                elements.connectionStatus.textContent = state;
+                elements.connectionStatus.className = `status-badge ${state}`;
+
+                const isConnected = state === "connected";
+                elements.connectBtn.disabled = isConnected;
+                elements.disconnectBtn.disabled = !isConnected;
+                elements.subscribeBtn.disabled = !isConnected;
+                elements.triggerEventBtn.disabled =
+                    !isConnected || subscribedChannels.size === 0;
+                elements.bindEventBtn.disabled =
+                    !isConnected || subscribedChannels.size === 0;
+
+                if (isConnected && pusher) {
+                    try {
+                        const socketId = pusher.socket_id();
+                        elements.socketId.textContent = socketId || "-";
+                    } catch (e) {
+                        elements.socketId.textContent = "-";
+                    }
+                } else {
+                    elements.socketId.textContent = "-";
+                }
+            }
+
+            // Update channel list
+            function updateChannelList() {
+                if (subscribedChannels.size === 0) {
+                    elements.channelList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>No active channels</p>
+                    </div>
+                `;
+                    elements.targetChannel.innerHTML =
+                        '<option value="">Select a channel</option>';
+                    return;
+                }
+
+                elements.channelList.innerHTML = "";
+                elements.targetChannel.innerHTML =
+                    '<option value="">Select a channel</option>';
+
+                subscribedChannels.forEach((channel, name) => {
+                    const item = document.createElement("div");
+                    item.className = "channel-item";
+
+                    let type = "public";
+                    if (name.startsWith("private-encrypted-"))
+                        type = "encrypted";
+                    else if (name.startsWith("private-")) type = "private";
+                    else if (name.startsWith("presence-")) type = "presence";
+
+                    item.innerHTML = `
+                    <div>
+                        <div class="channel-name">${name}</div>
+                    </div>
+                    <span class="channel-type">${type}</span>
+                `;
+                    elements.channelList.appendChild(item);
+
+                    const option = document.createElement("option");
+                    option.value = name;
+                    option.textContent = name;
+                    elements.targetChannel.appendChild(option);
+                });
+
+                updatePresenceChannelSelect();
+            }
+
+            // Update presence channel select
+            function updatePresenceChannelSelect() {
+                const presenceChannels = Array.from(
+                    subscribedChannels.keys(),
+                ).filter((name) => name.startsWith("presence-"));
+
+                if (presenceChannels.length === 0) {
+                    elements.presenceChannelSelect.innerHTML =
+                        '<option value="">No presence channels</option>';
+                    return;
+                }
+
+                elements.presenceChannelSelect.innerHTML = "";
+                presenceChannels.forEach((name) => {
+                    const option = document.createElement("option");
+                    option.value = name;
+                    option.textContent = name;
+                    elements.presenceChannelSelect.appendChild(option);
+                });
+            }
+
+            // Update bound events list
+            function updateBoundEventsList() {
+                if (boundEvents.size === 0) {
+                    elements.boundEventsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <p>No bound events</p>
+                    </div>
+                `;
+                    return;
+                }
+
+                elements.boundEventsList.innerHTML = "";
+                boundEvents.forEach((_, key) => {
+                    const [channelName, eventName] = key.split("::");
+                    const item = document.createElement("div");
+                    item.className = "channel-item";
+                    item.innerHTML = `
+                    <div>
+                        <div class="channel-name">${eventName}</div>
+                        <div style="font-size: 0.85em; color: #6c757d;">on ${channelName}</div>
+                    </div>
+                `;
+                    elements.boundEventsList.appendChild(item);
+                });
+            }
+
+            // Update member list
+            function updateMemberList(channelName) {
+                const members = presenceMembers.get(channelName) || [];
+                elements.memberCount.textContent = members.length;
+
+                if (members.length === 0) {
+                    elements.memberList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👤</div>
+                        <p>No members</p>
+                    </div>
+                `;
+                    return;
+                }
+
+                elements.memberList.innerHTML = "";
+                members.forEach((member) => {
+                    const item = document.createElement("div");
+                    item.className = "member-item";
+
+                    const initial = member.name
+                        ? member.name[0].toUpperCase()
+                        : "?";
+                    item.innerHTML = `
+                    <div class="member-avatar">${initial}</div>
+                    <div class="member-info">
+                        <div class="member-name">${member.name || "Anonymous"}</div>
+                        <div class="member-id">ID: ${member.id}</div>
+                    </div>
+                `;
+                    elements.memberList.appendChild(item);
+                });
+            }
+
+            // Update statistics
+            function updateStats() {
+                if (!pusher) return;
+
+                try {
+                    const stats = pusher.get_delta_stats();
+                    if (stats) {
+                        elements.totalMessages.textContent =
+                            stats.total_messages || 0;
+                        elements.deltaMessages.textContent =
+                            stats.delta_messages || 0;
+                        elements.bandwidthSaved.textContent =
+                            (stats.bandwidth_saved_percent || 0).toFixed(1) +
+                            "%";
+                        elements.compressionRatio.textContent =
+                            (stats.average_compression_ratio || 0).toFixed(1) +
+                            "%";
+                    }
+                } catch (e) {
+                    logError(`Failed to get stats: ${e.message}`);
+                }
+            }
+
+            // Connect to server
+            async function connect() {
+                try {
+                    log("Initializing WASM module...", "info");
+                    await init();
+                    logSuccess("WASM module initialized");
+
+                    const options = new SockudoOptions(elements.appKey.value);
+                    options.cluster = elements.cluster.value;
+                    options.ws_host = elements.wsHost.value;
+                    options.ws_port = parseInt(elements.wsPort.value);
+                    options.use_tls = elements.useTls.checked;
+                    options.debug = elements.enableDebug.checked;
+                    options.enable_delta_compression =
+                        elements.enableDelta.checked;
+
+                    if (elements.authEndpoint.value) {
+                        options.auth_endpoint = elements.authEndpoint.value;
+                    }
+
+                    log("Creating Pusher client...", "info");
+                    pusher = new SockudoClient(elements.appKey.value, options);
+                    await pusher.connect();
+
+                    // Bind global events
+                    pusher.bind_global((event) => {
+                        logEvent(event.event || "unknown", event.data || {});
+
+                        // Handle connection state changes
+                        if (event.event === "pusher:connection_established") {
+                            updateConnectionStatus("connected");
+                            showAlert(
+                                "Successfully connected to server!",
+                                "success",
+                            );
+                        } else if (event.event === "pusher:error") {
+                            logError(
+                                `Pusher error: ${JSON.stringify(event.data)}`,
+                            );
+                            showAlert("Connection error occurred", "error");
+                        }
+                    });
+
+                    log("Connecting to server...", "info");
+                    updateConnectionStatus("connecting");
+
+                    logSuccess("Connected to server!");
+                    updateConnectionStatus("connected");
+                } catch (e) {
+                    logError(`Connection failed: ${e.message}`);
+                    showAlert(`Connection failed: ${e.message}`, "error");
+                    updateConnectionStatus("disconnected");
+                }
+            }
+
+            // Disconnect from server
+            async function disconnect() {
+                if (!pusher) return;
+
+                try {
+                    log("Disconnecting...", "info");
+                    await pusher.disconnect();
+
+                    subscribedChannels.clear();
+                    boundEvents.clear();
+                    presenceMembers.clear();
+
+                    updateChannelList();
+                    updateBoundEventsList();
+                    updateMemberList("");
+                    updateConnectionStatus("disconnected");
+
+                    logSuccess("Disconnected from server");
+                    showAlert("Disconnected successfully", "info");
+
+                    pusher = null;
+                } catch (e) {
+                    logError(`Disconnect failed: ${e.message}`);
+                }
+            }
+
+            // Subscribe to channel
+            async function subscribe() {
+                if (!pusher) return;
+
+                const channelName = elements.channelName.value.trim();
+                if (!channelName) {
+                    showAlert("Please enter a channel name", "error");
+                    return;
+                }
+
+                try {
+                    log(`Subscribing to channel: ${channelName}`, "info");
+                    const channel = pusher.subscribe(channelName);
+                    subscribedChannels.set(channelName, channel);
+
+                    // Bind to subscription events
+                    channel.bind("pusher:subscription_succeeded", (event) => {
+                        logSuccess(`Subscribed to ${channelName}`);
+                        showAlert(`Subscribed to ${channelName}`, "success");
+
+                        // Handle presence channel members
+                        if (channelName.startsWith("presence-") && event.data) {
+                            try {
+                                const data = JSON.parse(event.data);
+                                if (data.presence) {
+                                    const members = Object.entries(
+                                        data.presence.hash || {},
+                                    ).map(([id, info]) => ({
+                                        id,
+                                        name:
+                                            info.name ||
+                                            info.user_name ||
+                                            "Anonymous",
+                                    }));
+                                    presenceMembers.set(channelName, members);
+
+                                    if (data.presence.me) {
+                                        elements.myUserId.textContent =
+                                            data.presence.me.id || "-";
+                                    }
+
+                                    if (
+                                        elements.presenceChannelSelect.value ===
+                                        channelName
+                                    ) {
+                                        updateMemberList(channelName);
+                                    }
+                                }
+                            } catch (e) {
+                                logWarning(
+                                    `Failed to parse presence data: ${e.message}`,
+                                );
+                            }
+                        }
+                    });
+
+                    channel.bind("pusher:subscription_error", (event) => {
+                        logError(
+                            `Subscription error for ${channelName}: ${JSON.stringify(event.data)}`,
+                        );
+                        showAlert(
+                            `Failed to subscribe to ${channelName}`,
+                            "error",
+                        );
+                    });
+
+                    // Bind presence events
+                    if (channelName.startsWith("presence-")) {
+                        channel.bind("pusher:member_added", (event) => {
+                            logEvent("pusher:member_added", event.data);
+                            // Update member list
+                            updateMemberList(channelName);
+                        });
+
+                        channel.bind("pusher:member_removed", (event) => {
+                            logEvent("pusher:member_removed", event.data);
+                            // Update member list
+                            updateMemberList(channelName);
+                        });
+                    }
+
+                    updateChannelList();
+                    elements.channelName.value = "";
+                } catch (e) {
+                    logError(`Subscribe failed: ${e.message}`);
+                    showAlert(`Subscribe failed: ${e.message}`, "error");
+                }
+            }
+
+            // Unsubscribe from channel
+            function unsubscribe() {
+                const channelName = elements.channelName.value.trim();
+                if (!channelName) {
+                    showAlert("Please enter a channel name", "error");
+                    return;
+                }
+
+                if (!subscribedChannels.has(channelName)) {
+                    showAlert("Not subscribed to this channel", "error");
+                    return;
+                }
+
+                try {
+                    pusher.unsubscribe(channelName);
+                    subscribedChannels.delete(channelName);
+                    presenceMembers.delete(channelName);
+
+                    // Remove bound events for this channel
+                    boundEvents.forEach((_, key) => {
+                        if (key.startsWith(channelName + "::")) {
+                            boundEvents.delete(key);
+                        }
+                    });
+
+                    updateChannelList();
+                    updateBoundEventsList();
+                    logSuccess(`Unsubscribed from ${channelName}`);
+                    showAlert(`Unsubscribed from ${channelName}`, "success");
+                    elements.channelName.value = "";
+                } catch (e) {
+                    logError(`Unsubscribe failed: ${e.message}`);
+                    showAlert(`Unsubscribe failed: ${e.message}`, "error");
+                }
+            }
+
+            // Bind to event
+            function bindEvent() {
+                const channelName = elements.targetChannel.value;
+                const eventName = elements.eventName.value.trim();
+
+                if (!channelName || !eventName) {
+                    showAlert(
+                        "Please select a channel and enter an event name",
+                        "error",
+                    );
+                    return;
+                }
+
+                const channel = subscribedChannels.get(channelName);
+                if (!channel) {
+                    showAlert("Channel not found", "error");
+                    return;
+                }
+
+                try {
+                    const key = `${channelName}::${eventName}`;
+
+                    channel.bind(eventName, (event) => {
+                        logEvent(eventName, event.data || {});
+                    });
+
+                    boundEvents.set(key, true);
+                    updateBoundEventsList();
+
+                    logSuccess(
+                        `Bound to event "${eventName}" on channel "${channelName}"`,
+                    );
+                    showAlert(`Bound to event "${eventName}"`, "success");
+                    elements.eventName.value = "";
+                } catch (e) {
+                    logError(`Bind event failed: ${e.message}`);
+                    showAlert(`Bind event failed: ${e.message}`, "error");
+                }
+            }
+
+            // Trigger event
+            function triggerEvent() {
+                const channelName = elements.targetChannel.value;
+                const eventName = elements.eventName.value.trim();
+                const eventData = elements.eventData.value.trim();
+
+                if (!channelName || !eventName) {
+                    showAlert(
+                        "Please select a channel and enter an event name",
+                        "error",
+                    );
+                    return;
+                }
+
+                // Client events must start with 'client-'
+                if (!eventName.startsWith("client-")) {
+                    showAlert(
+                        'Client events must start with "client-"',
+                        "error",
+                    );
+                    return;
+                }
+
+                // Can only trigger on private/presence channels
+                if (
+                    !channelName.startsWith("private-") &&
+                    !channelName.startsWith("presence-")
+                ) {
+                    showAlert(
+                        "Can only trigger events on private or presence channels",
+                        "error",
+                    );
+                    return;
+                }
+
+                const channel = subscribedChannels.get(channelName);
+                if (!channel) {
+                    showAlert("Channel not found", "error");
+                    return;
+                }
+
+                try {
+                    let data = eventData || "{}";
+
+                    // Validate JSON
+                    JSON.parse(data);
+
+                    channel.trigger(eventName, data);
+
+                    logSuccess(
+                        `Triggered event "${eventName}" on channel "${channelName}"`,
+                    );
+                    showAlert(`Event "${eventName}" triggered`, "success");
+                    elements.eventData.value = "";
+                } catch (e) {
+                    logError(`Trigger event failed: ${e.message}`);
+                    showAlert(`Trigger event failed: ${e.message}`, "error");
+                }
+            }
+
+            // Event listeners
+            elements.connectBtn.addEventListener("click", connect);
+            elements.disconnectBtn.addEventListener("click", disconnect);
+            elements.subscribeBtn.addEventListener("click", subscribe);
+            elements.unsubscribeBtn.addEventListener("click", unsubscribe);
+            elements.bindEventBtn.addEventListener("click", bindEvent);
+            elements.triggerEventBtn.addEventListener("click", triggerEvent);
+            elements.refreshStatsBtn.addEventListener("click", updateStats);
+
+            elements.clearLogBtn.addEventListener("click", () => {
+                elements.eventLog.innerHTML = "";
+                log("Log cleared", "info");
+            });
+
+            elements.exportLogBtn.addEventListener("click", () => {
+                const logText = elements.eventLog.innerText;
+                const blob = new Blob([logText], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `sockudo-log-${Date.now()}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+                showAlert("Log exported successfully", "success");
+            });
+
+            elements.presenceChannelSelect.addEventListener("change", (e) => {
+                updateMemberList(e.target.value);
+            });
+
+            elements.targetChannel.addEventListener("change", () => {
+                elements.triggerEventBtn.disabled =
+                    !elements.targetChannel.value;
+                elements.bindEventBtn.disabled = !elements.targetChannel.value;
+            });
+
+            // Auto-update stats every 5 seconds
+            setInterval(() => {
+                if (pusher) {
+                    updateStats();
+                }
+            }, 5000);
+
+            // Keyboard shortcuts
+            document.addEventListener("keydown", (e) => {
+                // Ctrl/Cmd + Enter to connect
+                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                    if (!pusher) {
+                        connect();
+                    }
+                }
+            });
+
+            log("Page loaded and ready!", "success");
+        </script>
+    </body>
+</html>

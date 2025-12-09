@@ -64,7 +64,12 @@ impl DeltaManager {
             .collect()
     }
 
-    /// Enable delta compression by sending request to server
+    /// Enable delta compression by sending request to server.
+    ///
+    /// Note: Some servers (like Sockudo) use per-channel delta compression
+    /// configured on the server side, rather than requiring a client-side
+    /// enable request. In that case, the server will automatically send
+    /// delta-compressed messages based on channel configuration.
     pub fn enable(&self) {
         if !self.options.enabled {
             debug!("Delta compression disabled in options");
@@ -111,7 +116,10 @@ impl DeltaManager {
         self.channel_states.write().clear();
     }
 
-    /// Handle delta compression enabled confirmation
+    /// Handle delta compression enabled confirmation from server.
+    ///
+    /// This is called when the server responds with `pusher:delta_compression_enabled`.
+    /// Note: Some servers use per-channel delta config and may not send this event.
     pub fn handle_enabled(&self, data: &Value) {
         *self.enabled.write() = true;
         debug!("Delta compression enabled: {:?}", data);
